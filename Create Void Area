@@ -45,7 +45,7 @@ if not checkSkyPlatformExists() then
     SkyPlatform.Name = "SkyPlatform"
     SkyPlatform.Shape = Enum.PartType.Cylinder
     SkyPlatform.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
-    SkyPlatform.Position = Vector3.new(0, 495000, 0)
+    SkyPlatform.Position = Vector3.new(971971, 49500, 971971)
     SkyPlatform.Anchored = true
     SkyPlatform.BrickColor = BrickColor.new("Bright blue")
     SkyPlatform.Material = Enum.Material.Air
@@ -57,3 +57,10 @@ if not checkSkyPlatformExists() then
 
     SkyPlatform.Parent = game.Workspace
 end
+
+Rayfield:Notify({
+   Title = "Platforms",
+   Content = "Created Void & Sky Platforms Successfully!",
+   Duration = 6.5,
+   Image = check-check,
+})
