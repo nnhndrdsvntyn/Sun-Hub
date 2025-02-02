@@ -1,41 +1,28 @@
--- Function to add rounded corners to UI elements
+-- Function to add rounded corners to an element
 local function addRoundedCorners(element, radius)
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, radius)
     corner.Parent = element
 end
 
--- Function to switch tabs and show/hide content
-local function switchTab(tabName)
-    -- Reset background color for all tabs
-    for _, tab in pairs(tabs) do
-        tab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+-- Function to switch between tabs
+local function switchTab(tabName, contentFrames)
+    -- Hide all tab contents
+    for _, content in pairs(contentFrames) do
+        content.Visible = false
     end
-
-    -- Hide content for all tabs first
-    contentLabel.Visible = false
-
-    -- Show content and update tint for selected tab
-    if tabName == "Tab 1" then
-        tabs["Tab1"].BackgroundColor3 = Color3.fromRGB(100, 100, 100)  -- Active tint for Tab 1
-        contentLabel.Text = "Tab 1 Content"
-        contentLabel.Visible = true
-    elseif tabName == "Tab 2" then
-        tabs["Tab2"].BackgroundColor3 = Color3.fromRGB(100, 100, 100)  -- Active tint for Tab 2
-        contentLabel.Text = "Tab 2 Content"
-        contentLabel.Visible = true
+    
+    -- Show the selected tab's content
+    local activeTab = contentFrames[tabName]
+    if activeTab then
+        activeTab.Visible = true
     end
 end
 
--- Function to add a button to the active tab dynamically
-local function AddButton(buttonData)
-    -- Determine which tab to add the button to
-    local activeTab = tabs["Tab1"].BackgroundColor3 == Color3.fromRGB(100, 100, 100) and "Tab1" or "Tab2"
-    local tabFrame = activeTab == "Tab1" and tab1Content or tab2Content
-
+-- Function to create a button and add it to a tab
+local function AddButton(tabContent, buttonData)
     -- Create the button
     local button = Instance.new("TextButton")
-    button.Name = buttonData.Title
     button.Size = UDim2.new(1, 0, 0, 50)  -- Full width, 50px height
     button.Position = UDim2.new(0, 0, 1, -50)  -- Place at the bottom of the tab
     button.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
@@ -43,26 +30,24 @@ local function AddButton(buttonData)
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.Font = Enum.Font.SourceSansBold
     button.TextSize = 22
-    button.Parent = tabFrame
+    button.Parent = tabContent
     addRoundedCorners(button, 10)
 
     -- Title above the button
     local buttonTitle = Instance.new("TextLabel")
-    buttonTitle.Name = buttonData.Title .. "Title"
     buttonTitle.Size = UDim2.new(1, 0, 0, 30)
     buttonTitle.Position = UDim2.new(0, 10, 0, 0)
-    buttonTitle.BackgroundTransparency = 1  -- Transparent background
+    buttonTitle.BackgroundTransparency = 1
     buttonTitle.Text = buttonData.Title
     buttonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
     buttonTitle.Font = Enum.Font.SourceSansBold
     buttonTitle.TextSize = 18
-    buttonTitle.TextXAlignment = Enum.TextXAlignment.Left  -- Text aligned to the left
-    buttonTitle.Parent = tabFrame
+    buttonTitle.TextXAlignment = Enum.TextXAlignment.Left
+    buttonTitle.Parent = tabContent
     addRoundedCorners(buttonTitle, 10)
 
     -- Description under the title
     local buttonDescription = Instance.new("TextLabel")
-    buttonDescription.Name = buttonData.Title .. "Description"
     buttonDescription.Size = UDim2.new(1, 0, 0, 20)
     buttonDescription.Position = UDim2.new(0, 10, 0, 30)
     buttonDescription.BackgroundTransparency = 1
@@ -71,9 +56,28 @@ local function AddButton(buttonData)
     buttonDescription.Font = Enum.Font.SourceSans
     buttonDescription.TextSize = 14
     buttonDescription.TextXAlignment = Enum.TextXAlignment.Left
-    buttonDescription.Parent = tabFrame
+    buttonDescription.Parent = tabContent
     addRoundedCorners(buttonDescription, 10)
 
-    -- Set up the button click function
+    -- Button click function
     button.MouseButton1Click:Connect(buttonData.Function)
+end
+
+-- Define the function to initialize tabs (user provides tabs info)
+local function initializeTabs()
+    local contentFrames = {}
+
+    -- Dynamically create content frames for each tab
+    -- This is called after the user defines the tabs
+    -- contentFrames will be populated when users call `initializeTabs`
+    return {
+        switchTab = function(tabName)
+            switchTab(tabName, contentFrames)
+        end,
+        AddButton = function(tabName, buttonData)
+            AddButton(contentFrames[tabName], buttonData)
+        end,
+        -- Placeholder for tabs, should be populated by the user when calling this function
+        contentFrames = contentFrames
+    }
 end
