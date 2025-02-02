@@ -1,123 +1,244 @@
--- UI Library
-local UILibrary = {}
+-- Create ScreenGui in StarterGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "LiveEditUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
--- Create the ScreenGui (internal handling, no user input)
-local function CreateScreen()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    return screenGui
+-- Function to add rounded corners to UI elements
+local function addRoundedCorners(element, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius)
+    corner.Parent = element
 end
 
--- Create the window with pre-defined size (internal handling)
-local function CreateWindow(screenGui)
-    local window = Instance.new("Frame")
-    window.Size = UDim2.new(0, 500, 0, 400) -- Fixed size window
-    window.Position = UDim2.new(0.5, -250, 0.5, -200) -- Centered on screen
-    window.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    window.Parent = screenGui
+-- Function to create a draggable frame
+local function createDraggableFrame(name, size, position, parent)
+    local frame = Instance.new("Frame")
+    frame.Name = name
+    frame.Size = size
+    frame.Position = position
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Parent = parent
+    addRoundedCorners(frame, 12)
+    
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 50)
-    title.BackgroundTransparency = 1
-    title.Text = "My Custom Window"
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 24
-    title.TextAlignment = Enum.TextAlignment.Center
-    title.Parent = window
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+        end
+    end)
 
-    return window
+    frame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    return frame
 end
 
--- Create Tab System (internal handling)
-local function CreateTabSystem(window)
-    local tabBar = Instance.new("Frame")
-    tabBar.Size = UDim2.new(0, 120, 1, 0)
-    tabBar.Position = UDim2.new(0, 0, 0, 50)
-    tabBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    tabBar.Parent = window
+-- Create the main frame
+local mainFrame = createDraggableFrame("MainFrame", UDim2.new(0, 675, 0, 350), UDim2.new(0.5, -337, 0.5, -175), screenGui)
 
-    local contentFrame = Instance.new("Frame")
-    contentFrame.Size = UDim2.new(0, window.Size.X.Offset - 120, 1, 0)
-    contentFrame.Position = UDim2.new(0, 120, 0, 50)
-    contentFrame.BackgroundTransparency = 1
-    contentFrame.Parent = window
+-- Function to create a new tab
+local function createTab(name, size, position, parent, onClick)
+    local tab = Instance.new("TextButton")
+    tab.Name = name
+    tab.Size = size
+    tab.Position = position
+    tab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    tab.Text = name
+    tab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tab.Font = Enum.Font.SourceSans
+    tab.TextSize = 20
+    tab.Parent = parent
+    addRoundedCorners(tab, 8)
 
-    local tabs = {}
+    tab.MouseButton1Click:Connect(onClick)
 
-    local function AddTab(tabName, tabLabel)
-        local tabButton = Instance.new("TextButton")
-        tabButton.Size = UDim2.new(1, 0, 0, 50)
-        tabButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        tabButton.Text = tabLabel
-        tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tabButton.Font = Enum.Font.SourceSansBold
-        tabButton.TextSize = 20
-        tabButton.Parent = tabBar
-
-        local tabContent = Instance.new("Frame")
-        tabContent.Size = UDim2.new(1, 0, 1, 0)
-        tabContent.Position = UDim2.new(0, 0, 0, 0)
-        tabContent.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        tabContent.Visible = false
-        tabContent.Parent = contentFrame
-
-        tabs[tabName] = {
-            button = tabButton,
-            content = tabContent
-        }
-
-        tabButton.MouseButton1Click:Connect(function()
-            for _, tab in pairs(tabs) do
-                tab.content.Visible = false
-            end
-            tabContent.Visible = true
-        end)
-    end
-
-    return { AddTab = AddTab, tabs = tabs }
+    return tab
 end
 
--- Add button to a tab (internal handling)
-local function AddButtonToTab(tabName, buttonData, tabSystem)
-    local tab = tabSystem.tabs[tabName]
-    if tab then
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(1, 0, 0, 50)
-        button.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
-        button.Text = buttonData.Title
-        button.TextColor3 = Color3.fromRGB(255, 255, 255)
-        button.Font = Enum.Font.SourceSansBold
-        button.TextSize = 22
-        button.Parent = tab.content
+-- Function to create a new label
+local function createLabel(name, size, position, text, parent)
+    local label = Instance.new("TextLabel")
+    label.Name = name
+    label.Size = size
+    label.Position = position
+    label.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 20
+    label.Parent = parent
+    addRoundedCorners(label, 8)
 
-        local description = Instance.new("TextLabel")
-        description.Size = UDim2.new(1, 0, 0, 20)
-        description.Position = UDim2.new(0, 0, 1, 0)
-        description.BackgroundTransparency = 1
-        description.Text = buttonData.Description
-        description.TextColor3 = Color3.fromRGB(200, 200, 200)
-        description.Font = Enum.Font.SourceSans
-        description.TextSize = 14
-        description.Parent = tab.content
-
-        button.MouseButton1Click:Connect(buttonData.Function)
-    end
+    return label
 end
 
--- Main Initialization (hidden to the user)
-function UILibrary:Init()
-    local screenGui = CreateScreen()
-    local window = CreateWindow(screenGui)
-    local tabSystem = CreateTabSystem(window)
+-- Function to create a new button
+local function createButton(name, size, position, text, parent, onClick)
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = size
+    button.Position = position
+    button.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.SourceSansBold
+    button.TextSize = 22
+    button.Parent = parent
+    addRoundedCorners(button, 10)
 
-    -- Public functions (user-facing)
-    function UILibrary:AddTab(tabName, tabLabel)
-        tabSystem.AddTab(tabName, tabLabel)
-    end
+    button.MouseButton1Click:Connect(onClick)
 
-    function UILibrary:AddButton(tabName, buttonData)
-        AddButtonToTab(tabName, buttonData, tabSystem)
-    end
+    return button
 end
 
-return UILibrary
+-- Function to create a new slider
+local function createSlider(name, size, position, parent, onValueChange)
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Name = name
+    sliderFrame.Size = size
+    sliderFrame.Position = position
+    sliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    sliderFrame.Parent = parent
+    addRoundedCorners(sliderFrame, 10)
+
+    local slider = Instance.new("TextButton")
+    slider.Name = "Slider"
+    slider.Size = UDim2.new(1, -20, 0, 20)
+    slider.Position = UDim2.new(0, 10, 0, 10)
+    slider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    slider.Text = ""
+    slider.BorderSizePixel = 0
+    slider.AutoButtonColor = false
+    slider.ClipsDescendants = true
+    slider.Parent = sliderFrame
+    addRoundedCorners(slider, 10)
+
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Name = "SliderFill"
+    sliderFill.Size = UDim2.new(0.5, 0, 1, 0)  -- Initial size, adjust the value as needed
+    sliderFill.Position = UDim2.new(0, 0, 0, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Parent = slider
+
+    local sliderHandle = Instance.new("Frame")
+    sliderHandle.Name = "SliderHandle"
+    sliderHandle.Size = UDim2.new(0, 10, 1, 0)
+    sliderHandle.Position = UDim2.new(0.5, 0, 0, 0)  -- Initial position, adjust the value as needed
+    sliderHandle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    sliderHandle.BorderSizePixel = 0
+    sliderHandle.Parent = slider
+    addRoundedCorners(sliderHandle, 10)
+
+    local draggingSlider = false
+
+    slider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingSlider = true
+            local delta = input.Position.X - slider.AbsolutePosition.X
+            local newPos = math.clamp(delta / slider.AbsoluteSize.X, 0, 1)
+            sliderHandle.Position = UDim2.new(newPos, 0, 0, 0)
+            sliderFill.Size = UDim2.new(newPos, 0, 1, 0)
+            onValueChange(newPos)
+        end
+    end)
+
+    slider.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingSlider = false
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position.X - slider.AbsolutePosition.X
+            local newPos = math.clamp(delta / slider.AbsoluteSize.X, 0, 1)
+            sliderHandle.Position = UDim2.new(newPos, 0, 0, 0)
+            sliderFill.Size = UDim2.new(newPos, 0, 1, 0)
+            onValueChange(newPos)
+        end
+    end)
+
+    return sliderFrame
+end
+
+-- Function to create a new toggle
+local function createToggle(name, size, position, parent, onToggle)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Name = name
+    toggleFrame.Size = size
+    toggleFrame.Position = position
+    toggleFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    toggleFrame.Parent = parent
+    addRoundedCorners(toggleFrame, 10)
+
+    local toggle = Instance.new("TextButton")
+    toggle.Name = "Toggle"
+    toggle.Size = UDim2.new(0, 40, 0, 40)  -- Square button
+    toggle.Position = UDim2.new(0, 10, 0, 5)  -- Slightly from the left
+    toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    toggle.Text = ""
+    toggle.BorderSizePixel = 0
+    toggle.AutoButtonColor = false
+    toggle.Parent = toggleFrame
+    addRoundedCorners(toggle, 10)
+
+    local toggleOn = false
+
+    toggle.MouseButton1Click:Connect(function()
+        toggleOn = not toggleOn
+        if toggleOn then
+            toggle.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+        else
+            toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        end
+        onToggle(toggleOn)
+    end)
+
+    return toggleFrame
+end
+
+-- Example of creating UI elements dynamically
+-- Uncomment the lines below to create example elements
+
+-- local tabsFrame = Instance.new("Frame")
+-- tabsFrame.Name = "TabsFrame"
+-- tabsFrame.Size = UDim2.new(0, 120, 1, -60)
+-- tabsFrame.Position = UDim2.new(0, 5, 0, 50)
+-- tabsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+-- tabsFrame.Parent = mainFrame
+-- addRoundedCorners(tabsFrame, 10)
+
+-- Create tabs
+-- local tab1 = createTab("Tab 1", UDim2.new(1, -10, 0, 40), UDim2.new(0, 5, 0, 5), tabsFrame, function() print("Tab 1 clicked") end)
+-- local tab2 = createTab("Tab 2", UDim2.new(1, -10, 0, 40), UDim2.new(0, 5, 0, 50), tabsFrame, function() print("Tab 2 clicked") end)
+
+-- Create a label
+-- local contentLabel = createLabel("ContentLabel", UDim2.new(1, -20, 1, -20), UDim2.new(0, 10, 0, 10), "Select a Tab", mainFrame)
+
+-- Create a button
+-- local exampleButton = createButton("ExampleButton", UDim2.new(1, 0, 0, 50), UDim2.new(0, 0, 0, 0), "", mainFrame, function() print("Button clicked") end)
+
+-- Create a slider
+-- local exampleSlider = createSlider("ExampleSlider", UDim2.new(1, 0, 0, 80), UDim2.new(0, 0, 0, 60), mainFrame, function(value) print("Slider value:", value) end)
+
+-- Create a toggle
+-- local exampleToggle = createToggle("ExampleToggle", UDim2.new(1, 0, 0, 50), UDim2.new(0, 0, 0, 150), mainFrame, function(state) print("Toggle state:", state) end)
