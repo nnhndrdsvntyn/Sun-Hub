@@ -1,15 +1,14 @@
--- Function to check if the VoidPlatform already exists
-local function checkVoidPlatformExists()
-    for _, obj in pairs(game.Workspace:GetChildren()) do
-        if obj:IsA("Part") and obj.Name == "VoidPlatform" then
-            return true
-        end
+-- Check if the VoidPlatform already exists
+local platformExists = false
+for _, obj in pairs(game.Workspace:GetChildren()) do
+    if obj:IsA("Part") and obj.Name == "VoidPlatform" then
+        platformExists = true
+        break
     end
-    return false
 end
 
 -- If the platform doesn't exist, create it
-if not checkVoidPlatformExists() then
+if not platformExists then
     local VoidPlatform = Instance.new("Part")
     VoidPlatform.Name = "VoidPlatform"
     VoidPlatform.Shape = Enum.PartType.Cylinder
@@ -27,4 +26,4 @@ if not checkVoidPlatformExists() then
     VoidPlatform.Parent = game.Workspace
 end
 
-print("success")
+print("Work1")
