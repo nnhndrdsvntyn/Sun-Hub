@@ -29,7 +29,7 @@ end
 
 wait(0.001)
 
--- Function to check if the VoidPlatform already exists
+-- Function to check if the SkyPlatform already exists
 local function checkSkyPlatformExists()
     for _, obj in pairs(game.Workspace:GetChildren()) do
         if obj:IsA("Part") and obj.Name == "SkyPlatform" then
@@ -56,4 +56,66 @@ if not checkSkyPlatformExists() then
     SkyPlatform.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
 
     SkyPlatform.Parent = game.Workspace
+end
+
+wait(0.001)
+
+-- Function to check if the PixelsPlatformv1 already exists
+local function checkPixelsPlatformv1Exists()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        if obj:IsA("Part") and obj.Name == "PixelsPlatformv1" then
+            return true
+        end
+    end
+    return false
+end
+
+-- If the platform doesn't exist, create it
+if not checkPixelsPlatformv1Exists() then
+    local PixelsPlatformv1 = Instance.new("Part")
+    PixelsPlatformv1.Name = "PixelsPlatformv1"
+    PixelsPlatformv1.Shape = Enum.PartType.Cylinder
+    PixelsPlatformv1.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
+    PixelsPlatformv1.Position = Vector3.new(-971971, 9999999, 971971)
+    PixelsPlatformv1.Anchored = true
+    PixelsPlatformv1.BrickColor = BrickColor.new("Bright blue")
+    PixelsPlatformv1.Material = Enum.Material.Air
+    PixelsPlatformv1.Transparency = 0.75
+    PixelsPlatformv1.CanCollide = true
+
+    -- Rotate it to stand upright (aligned with Y-axis)
+    PixelsPlatformv1.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+
+    PixelsPlatformv1.Parent = game.Workspace
+end
+
+wait(0.001)
+
+-- Function to check if the PixelsPlatformv2 already exists
+local function checkPixelsPlatformv2Exists()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        if obj:IsA("Part") and obj.Name == "PixelsPlatformv2" then
+            return true
+        end
+    end
+    return false
+end
+
+-- If the platform doesn't exist, create it
+if not checkPixelsPlatformv2Exists() then
+    local PixelsPlatformv2 = Instance.new("Part")
+    PixelsPlatformv2.Name = "PixelsPlatformv2"
+    PixelsPlatformv2.Shape = Enum.PartType.Cylinder
+    PixelsPlatformv2.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
+    PixelsPlatformv2.Position = Vector3.new(-971971, 99999999, 971971)
+    PixelsPlatformv2.Anchored = true
+    PixelsPlatformv2.BrickColor = BrickColor.new("Bright blue")
+    PixelsPlatformv2.Material = Enum.Material.Air
+    PixelsPlatformv2.Transparency = 0.75
+    PixelsPlatformv2.CanCollide = true
+
+    -- Rotate it to stand upright (aligned with Y-axis)
+    PixelsPlatformv2.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+
+    PixelsPlatformv2.Parent = game.Workspace
 end
