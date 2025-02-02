@@ -1,0 +1,94 @@
+
+Here is your updated code without the printing and warnings:
+
+lua
+Copy
+Edit
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Sun Hub - TSBG",
+   Icon = 0,
+   LoadingTitle = "Wait...",
+   LoadingSubtitle = "by Liberation/NNHN",
+   Theme = "Default",
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Big Hub"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false,
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided",
+      FileName = "Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"Hello"}
+   }
+})
+
+local MainTab = Window:CreateTab("Main Tab", "home")
+local VoidKillSection = MainTab:CreateSection("Void Kill Section")
+
+local VoidKillToggle = MainTab:CreateToggle({
+   Name = "Bring Moves Toggle",
+   CurrentValue = false,
+   Flag = "BringMovesToggle1",
+   Callback = function(Value) end,
+})
+
+local BringMovesDropdown = MainTab:CreateDropdown({
+   Name = "Bring Moves",
+   Options = {"Flowing Water", "Lethal Whirlwind Stream", "Foul Ball", "Atmos Cleave", "Pinpoint Cut", "Crushing Pull", "Bullet Barrage", "Head First"},
+   CurrentOption = nil,
+   MultipleOptions = true,
+   Flag = "BringMovesDropdown",
+   Callback = function(Options) end,
+})
+
+local BringMovesLocationDropdown = MainTab:CreateDropdown({
+   Name = "Bring Moves Location",
+   Options = {"Arena Center", "Mountain 1", "Mountain 2", "Void (Will Kill Player You Bring)", "Sky (Above Void)", "Death Counter Room (Inside)", "Death Counter Room (Outside)", "Atomic Slash Room (Inside)", "Atomic Slash Room (Outside)", "Blank Plate"},
+   CurrentOption = {"Void (Will Kill Player You Bring)"},
+   MultipleOptions = false,
+   Flag = "BringMovesLocationDropdown",
+   Callback = function(Options) end,
+})
+
+-- Function to check if the VoidPlatform already exists
+local function checkVoidPlatformExists()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        if obj:IsA("Part") and obj.Name == "VoidPlatform" then
+            return true
+        end
+    end
+    return false
+end
+
+-- If the platform doesn't exist, create it
+if not checkVoidPlatformExists() then
+    local VoidPlatform = Instance.new("Part")
+    VoidPlatform.Name = "VoidPlatform"
+    VoidPlatform.Shape = Enum.PartType.Cylinder
+    VoidPlatform.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
+    VoidPlatform.Position = Vector3.new(0, -495, 0)
+    VoidPlatform.Anchored = true
+    VoidPlatform.BrickColor = BrickColor.new("Bright blue")
+    VoidPlatform.Material = Enum.Material.Air
+    VoidPlatform.Transparency = 0.75
+    VoidPlatform.CanCollide = true
+
+    -- Rotate it to stand upright (aligned with Y-axis)
+    VoidPlatform.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+
+    VoidPlatform.Parent = game.Workspace
+end
