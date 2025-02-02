@@ -1,14 +1,15 @@
--- Check if the VoidPlatform already exists
-local platformExists = false
-for _, obj in pairs(game.Workspace:GetChildren()) do
-    if obj:IsA("Part") and obj.Name == "VoidPlatform" then
-        platformExists = true
-        break
+-- Function to check if the VoidPlatform already exists
+local function checkVoidPlatformExists()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        if obj:IsA("Part") and obj.Name == "VoidPlatform" then
+            return true
+        end
     end
+    return false
 end
 
 -- If the platform doesn't exist, create it
-if not platformExists then
+if not checkVoidPlatformExists() then
     local VoidPlatform = Instance.new("Part")
     VoidPlatform.Name = "VoidPlatform"
     VoidPlatform.Shape = Enum.PartType.Cylinder
@@ -26,4 +27,33 @@ if not platformExists then
     VoidPlatform.Parent = game.Workspace
 end
 
-print("Work1")
+wait(0.001)
+
+-- Function to check if the VoidPlatform already exists
+local function checkSkyPlatformExists()
+    for _, obj in pairs(game.Workspace:GetChildren()) do
+        if obj:IsA("Part") and obj.Name == "SkyPlatform" then
+            return true
+        end
+    end
+    return false
+end
+
+-- If the platform doesn't exist, create it
+if not checkSkyPlatformExists() then
+    local SkyPlatform = Instance.new("Part")
+    SkyPlatform.Name = "SkyPlatform"
+    SkyPlatform.Shape = Enum.PartType.Cylinder
+    SkyPlatform.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
+    SkyPlatform.Position = Vector3.new(0, 4500000, 0)
+    SkyPlatform.Anchored = true
+    SkyPlatform.BrickColor = BrickColor.new("Bright blue")
+    SkyPlatform.Material = Enum.Material.Air
+    SkyPlatform.Transparency = 0.75
+    SkyPlatform.CanCollide = true
+
+    -- Rotate it to stand upright (aligned with Y-axis)
+    SkyPlatform.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+
+    SkyPlatform.Parent = game.Workspace
+end
