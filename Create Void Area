@@ -1,27 +1,34 @@
-local function checkVoidPlatformExists()
-    for _, obj in pairs(game.Workspace:GetChildren()) do
-        if obj:IsA("Part") and obj.Name == "VoidPlatform" then
-            return true
+-- This is your loadstring code, but modified to include a function for the Void Platform creation.
+local function createVoidPlatform()
+    -- Function to check if the VoidPlatform already exists
+    local function checkVoidPlatformExists()
+        for _, obj in pairs(game.Workspace:GetChildren()) do
+            if obj:IsA("Part") and obj.Name == "VoidPlatform" then
+                return true
+            end
         end
+        return false
     end
-    return false
+
+    -- If the platform doesn't exist, create it
+    if not checkVoidPlatformExists() then
+        local VoidPlatform = Instance.new("Part")
+        VoidPlatform.Name = "VoidPlatform"
+        VoidPlatform.Shape = Enum.PartType.Cylinder
+        VoidPlatform.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
+        VoidPlatform.Position = Vector3.new(0, -495, 0)
+        VoidPlatform.Anchored = true
+        VoidPlatform.BrickColor = BrickColor.new("Bright blue")
+        VoidPlatform.Material = Enum.Material.Air
+        VoidPlatform.Transparency = 0.75
+        VoidPlatform.CanCollide = true
+
+        -- Rotate it to stand upright (aligned with Y-axis)
+        VoidPlatform.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+
+        VoidPlatform.Parent = game.Workspace
+    end
 end
 
--- If the platform doesn't exist, create it
-if not checkVoidPlatformExists() then
-    local VoidPlatform = Instance.new("Part")
-    VoidPlatform.Name = "VoidPlatform"
-    VoidPlatform.Shape = Enum.PartType.Cylinder
-    VoidPlatform.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
-    VoidPlatform.Position = Vector3.new(0, -495, 0)
-    VoidPlatform.Anchored = true
-    VoidPlatform.BrickColor = BrickColor.new("Bright blue")
-    VoidPlatform.Material = Enum.Material.Air
-    VoidPlatform.Transparency = 0.75
-    VoidPlatform.CanCollide = true
-
-    -- Rotate it to stand upright (aligned with Y-axis)
-    VoidPlatform.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
-
-    VoidPlatform.Parent = game.Workspace
-end
+-- Return the function to be used later in the GUI code
+return createVoidPlatform
