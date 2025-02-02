@@ -57,10 +57,3 @@ if not checkSkyPlatformExists() then
 
     SkyPlatform.Parent = game.Workspace
 end
-
-Rayfield:Notify({
-   Title = "Platforms",
-   Content = "Created Void & Sky Platforms Successfully!",
-   Duration = 6.5,
-   Image = check-check,
-})
