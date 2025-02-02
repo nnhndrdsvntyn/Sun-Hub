@@ -119,5 +119,3 @@ if not checkPixelsPlatformv2Exists() then
 
     PixelsPlatformv2.Parent = game.Workspace
 end
-
-print("t")
