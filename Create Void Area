@@ -26,3 +26,5 @@ if not checkVoidPlatformExists() then
 
     VoidPlatform.Parent = game.Workspace
 end
+
+print("success")
