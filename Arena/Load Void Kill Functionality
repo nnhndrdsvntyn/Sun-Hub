@@ -1,0 +1,111 @@
+-- Handle respawn
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    Humanoid = char:WaitForChild("Humanoid")
+end)
+
+-- Function to check if the animation is currently playing
+function isAnimationPlaying(animationName)
+    local playing = false
+    if Character and Character:FindFirstChild("Humanoid") then
+        local humanoid = Character.Humanoid
+        for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+            if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. Animations[animationName].id then
+                playing = true
+                break
+            end
+        end
+    end
+    return playing
+end
+
+-- Function to freeze the camera
+local function freezeCamera()
+    Camera.CameraType = Enum.CameraType.Scriptable
+end
+
+-- Function to unfreeze the camera
+local function unfreezeCamera()
+    Camera.CameraType = Enum.CameraType.Custom
+end
+
+-- Function to teleport the player
+local function teleportPlayer(position)
+    Character:SetPrimaryPartCFrame(CFrame.new(position))
+end
+
+-- Function to create the tracking platform
+local function createTrackingPlatform()
+    Platform = Instance.new("Part")
+    Platform.Size = Vector3.new(100, 1, 100)
+    Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
+    Platform.Anchored = true
+    Platform.CanCollide = true
+    Platform.Parent = workspace
+
+    -- Update platform position every heartbeat
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        if Platform and Character and Character.PrimaryPart then
+            Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
+        else
+            connection:Disconnect() -- Stop updating if something is missing
+        end
+    end)
+end
+
+-- Function to remove the platform
+local function removePlatform()
+    if Platform then
+        Platform:Destroy()
+        Platform = nil
+    end
+end
+
+-- Function to retrieve the animation details based on move name
+function getAnimationData(move)
+    return Animations[move]  -- Return the animation data directly
+end
+
+-- Constantly check if any animation is playing
+RunService.RenderStepped:Connect(function()
+    if #selectedMovesFlag > 0 then
+        for _, move in ipairs(selectedMovesFlag) do
+            local animationData = getAnimationData(move)
+            
+            -- Ensure that animationData is not nil
+            if animationData then
+                local animationName = move
+                local delayBeforeTeleport = animationData.delay
+                local durationBeforeUndo = animationData.duration
+
+                if animationName and isAnimationPlaying(animationName) then
+                    if not DetectionHalted then
+                        DetectionHalted = true -- Halt detections
+                        -- Wait for the animation's delay minus 0.00001 seconds to capture the position exactly before teleport
+                        task.wait(delayBeforeTeleport - 0.00001) -- Wait until the last moment before teleporting
+
+                        -- Save the player's original position just before teleporting
+                        OriginalPosition = Character.PrimaryPart.Position
+
+                        task.wait(0.00001) -- Adding a very small wait to simulate "just before" teleport
+
+                        -- Now proceed with the teleportation
+                        freezeCamera() -- Freeze camera
+                        createTrackingPlatform() -- Create platform
+                        teleportPlayer(Vector3.new(OriginalPosition.X, TargetY, OriginalPosition.Z)) -- Move player to -490 Y level
+
+                        task.wait(durationBeforeUndo) -- Stay at -490 for the set duration
+
+                        teleportPlayer(OriginalPosition) -- Move player back to original location
+                        unfreezeCamera() -- Unfreeze camera
+                        removePlatform() -- Remove platform
+
+                        DetectionHalted = false -- Resume detections
+                    end
+                end
+            end
+        end
+    end
+end)
+
