@@ -1,4 +1,5 @@
 -- Load required services
+Version = 1.0
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -83,6 +84,15 @@ local function getAnimationData(move)
     return Animations[move]
 end
 
+-- Function to reset Character and Humanoid after respawn
+local function onCharacterAdded(newCharacter)
+    Character = newCharacter
+    Humanoid = Character:WaitForChild("Humanoid")
+end
+
+-- Connect to CharacterAdded to handle respawning
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
 -- Animation Detection Loop
 RunService.RenderStepped:Connect(function()
     if #getgenv().SelectedMovesFlag > 0 then
@@ -117,3 +127,5 @@ end)
 getgenv().UpdateSelectedMoves = function(moves)
     getgenv().SelectedMovesFlag = moves
 end
+
+print("\n\n\n\n     ✅ Loaded Void Kill Functionality\n     ❗ Version: "..Version)
