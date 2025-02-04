@@ -1,71 +1,33 @@
+-- Load UI Framework
 local SunHub_TSBG_MainArena = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Create UI Window
 local Window = SunHub_TSBG_MainArena:CreateWindow({
    Name = "Sun Hub TSBG",
-   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   Icon = 0,
    LoadingTitle = "Loading Sun Hub",
    LoadingSubtitle = "For TSBG",
-   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
-
+   Theme = "Default",
    DisableRayfieldPrompts = false,
-   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
-
+   DisableBuildWarnings = false,
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = nil, -- Create a custom folder for your hub/game
+      FolderName = nil,
       FileName = "Big Hub"
    },
-
    Discord = {
-      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
-      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
-      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
    },
-
-   KeySystem = false, -- Set this to true to use our key system
-   KeySettings = {
-      Title = "Untitled",
-      Subtitle = "Key System",
-      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
-      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
-      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
-      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
-      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
-   }
+   KeySystem = false
 })
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = game.Workspace.CurrentCamera
-
-local DetectionHalted = false
-local Platform
-local OriginalPosition
-local TargetY = -497.9
-local PlatformY = -499.9
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
-
--- Table of animations with delay before teleport and duration before undoing
-local Animations = {
-    ["Flowing Water"] = {id = "12273188754", delay = 0.85, duration = 2},
-    ["Lethal Whirlwind Stream"] = {id = "12296113986", delay = 1, duration = 1.5},
-    ["Foul Ball"] = {id = "14705929107", delay = 1.75, duration = 1.5},
-    ["Atmos Cleave"] = {id = "15145462680", delay = 1.75, duration = 2},
-    ["Pinpoint Cut"] = {id = "15295895753", delay = 0.85, duration = 2},
-    ["Crushing Pull"] = {id = "16139108718", delay = 0.00000000000000000000000000000000001, duration = 1.3},
-    ["Bullet Barrage"] = {id = "17799224866", delay = 2, duration = 2.5},
-    ["Head First"] = {id = "18182425133", delay = 1.5, duration = 4}
-}
-
--- Flag to store selected moves from the dropdown
-local selectedMovesFlag = {}
-
-local MainTab = Window:CreateTab("Main", 4483362458) -- Title, Image
+-- UI Elements
+local MainTab = Window:CreateTab("Main", 4483362458)
 local VoidKillSection = MainTab:CreateSection("Void Kill")
 
--- Create the label first
+-- Create status label
 local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel(
    "Void Kill Status: OFF",
    4483362458,
@@ -73,23 +35,18 @@ local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel(
    true
 )
 
--- Create the dropdown
+-- Create dropdown
 local VoidKillMovesDropdown = MainTab:CreateDropdown({
    Name = "Void Kill (Moves)",
    Options = {"Flowing Water", "Lethal Whirlwind Stream", "Foul Ball", "Atmos Cleave", "Pinpoint Cut", "Crushing Pull", "Bullet Barrage", "Head First"},
    CurrentOption = nil,
    MultipleOptions = true,
-   Flag = "VoidKillMovesDropdown1", -- A flag is the identifier for the configuration file
+   Flag = "VoidKillMovesDropdown1",
    Callback = function(Options)
-       -- Store the selected options in the flag
-       selectedMovesFlag = Options
+       getgenv().UpdateSelectedMoves(Options) -- Call function from Void Kill Script
 
-       -- Update the label dynamically based on the selected options
        if #Options > 0 then
-           -- Format the selected moves into a string
-           local selectedMoves = table.concat(Options, "], [")
-           selectedMoves = "[" .. selectedMoves .. "]"
-           -- Update the label to show the selected moves
+           local selectedMoves = "[" .. table.concat(Options, "], [") .. "]"
            VoidKillMovesDropdownStateLabel:Set(
                "Void Kill Status: ON { Moves Selected: " .. selectedMoves .. " }",
                4483362458,
@@ -97,7 +54,6 @@ local VoidKillMovesDropdown = MainTab:CreateDropdown({
                true
            )
        else
-           -- If no moves are selected, set the status to OFF
            VoidKillMovesDropdownStateLabel:Set(
                "Void Kill Status: OFF",
                4483362458,
@@ -108,116 +64,5 @@ local VoidKillMovesDropdown = MainTab:CreateDropdown({
    end,
 })
 
-local ExploitsTab = Window:CreateTab("Exploits", 4483362458) -- Title, Image
-local AntiTab = Window:CreateTab("Anti", 4483362458) -- Title, Image
-
--- Handle respawn
-LocalPlayer.CharacterAdded:Connect(function(char)
-    Character = char
-    Humanoid = char:WaitForChild("Humanoid")
-end)
-
--- Function to check if the animation is currently playing
-function isAnimationPlaying(animationName)
-    local playing = false
-    if Character and Character:FindFirstChild("Humanoid") then
-        local humanoid = Character.Humanoid
-        for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
-            if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. Animations[animationName].id then
-                playing = true
-                break
-            end
-        end
-    end
-    return playing
-end
-
--- Function to freeze the camera
-local function freezeCamera()
-    Camera.CameraType = Enum.CameraType.Scriptable
-end
-
--- Function to unfreeze the camera
-local function unfreezeCamera()
-    Camera.CameraType = Enum.CameraType.Custom
-end
-
--- Function to teleport the player
-local function teleportPlayer(position)
-    Character:SetPrimaryPartCFrame(CFrame.new(position))
-end
-
--- Function to create the tracking platform
-local function createTrackingPlatform()
-    Platform = Instance.new("Part")
-    Platform.Size = Vector3.new(100, 1, 100)
-    Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
-    Platform.Anchored = true
-    Platform.CanCollide = true
-    Platform.Parent = workspace
-
-    -- Update platform position every heartbeat
-    local connection
-    connection = RunService.Heartbeat:Connect(function()
-        if Platform and Character and Character.PrimaryPart then
-            Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
-        else
-            connection:Disconnect() -- Stop updating if something is missing
-        end
-    end)
-end
-
--- Function to remove the platform
-local function removePlatform()
-    if Platform then
-        Platform:Destroy()
-        Platform = nil
-    end
-end
-
--- Function to retrieve the animation details based on move name
-function getAnimationData(move)
-    return Animations[move]  -- Return the animation data directly
-end
-
--- Constantly check if any animation is playing
-RunService.RenderStepped:Connect(function()
-    if #selectedMovesFlag > 0 then
-        for _, move in ipairs(selectedMovesFlag) do
-            local animationData = getAnimationData(move)
-            
-            -- Ensure that animationData is not nil
-            if animationData then
-                local animationName = move
-                local delayBeforeTeleport = animationData.delay
-                local durationBeforeUndo = animationData.duration
-
-                if animationName and isAnimationPlaying(animationName) then
-                    if not DetectionHalted then
-                        DetectionHalted = true -- Halt detections
-                        -- Wait for the animation's delay minus 0.00001 seconds to capture the position exactly before teleport
-                        task.wait(delayBeforeTeleport - 0.00001) -- Wait until the last moment before teleporting
-
-                        -- Save the player's original position just before teleporting
-                        OriginalPosition = Character.PrimaryPart.Position
-
-                        task.wait(0.00001) -- Adding a very small wait to simulate "just before" teleport
-
-                        -- Now proceed with the teleportation
-                        freezeCamera() -- Freeze camera
-                        createTrackingPlatform() -- Create platform
-                        teleportPlayer(Vector3.new(OriginalPosition.X, TargetY, OriginalPosition.Z)) -- Move player to -490 Y level
-
-                        task.wait(durationBeforeUndo) -- Stay at -490 for the set duration
-
-                        teleportPlayer(OriginalPosition) -- Move player back to original location
-                        unfreezeCamera() -- Unfreeze camera
-                        removePlatform() -- Remove platform
-
-                        DetectionHalted = false -- Resume detections
-                    end
-                end
-            end
-        end
-    end
-end)
+-- Execute the Void Kill Script (Ensure it's loaded first)
+loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Void%20Kill%20Functionality'))()
