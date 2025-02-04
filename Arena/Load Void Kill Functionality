@@ -1,40 +1,66 @@
--- Handle respawn
+-- Load required services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = game.Workspace.CurrentCamera
+
+-- Variables
+local DetectionHalted = false
+local Platform
+local OriginalPosition
+local TargetY = -497.9
+local PlatformY = -499.9
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- Animation data
+local Animations = {
+    ["Flowing Water"] = {id = "12273188754", delay = 0.85, duration = 2},
+    ["Lethal Whirlwind Stream"] = {id = "12296113986", delay = 1, duration = 1.5},
+    ["Foul Ball"] = {id = "14705929107", delay = 1.75, duration = 1.5},
+    ["Atmos Cleave"] = {id = "15145462680", delay = 1.75, duration = 2},
+    ["Pinpoint Cut"] = {id = "15295895753", delay = 0.85, duration = 2},
+    ["Crushing Pull"] = {id = "16139108718", delay = 0.00000000000000000000000000000000001, duration = 1.3},
+    ["Bullet Barrage"] = {id = "17799224866", delay = 2, duration = 2.5},
+    ["Head First"] = {id = "18182425133", delay = 1.5, duration = 4}
+}
+
+-- Selected moves storage
+local selectedMovesFlag = {}
+
+-- Handle player respawn
 LocalPlayer.CharacterAdded:Connect(function(char)
     Character = char
     Humanoid = char:WaitForChild("Humanoid")
 end)
 
--- Function to check if the animation is currently playing
-function isAnimationPlaying(animationName)
-    local playing = false
+-- Utility Functions
+
+local function isAnimationPlaying(animationName)
     if Character and Character:FindFirstChild("Humanoid") then
-        local humanoid = Character.Humanoid
-        for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+        for _, track in ipairs(Character.Humanoid:GetPlayingAnimationTracks()) do
             if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. Animations[animationName].id then
-                playing = true
-                break
+                return true
             end
         end
     end
-    return playing
+    return false
 end
 
--- Function to freeze the camera
 local function freezeCamera()
     Camera.CameraType = Enum.CameraType.Scriptable
 end
 
--- Function to unfreeze the camera
 local function unfreezeCamera()
     Camera.CameraType = Enum.CameraType.Custom
 end
 
--- Function to teleport the player
 local function teleportPlayer(position)
-    Character:SetPrimaryPartCFrame(CFrame.new(position))
+    if Character and Character.PrimaryPart then
+        Character:SetPrimaryPartCFrame(CFrame.new(position))
+    end
 end
 
--- Function to create the tracking platform
 local function createTrackingPlatform()
     Platform = Instance.new("Part")
     Platform.Size = Vector3.new(100, 1, 100)
@@ -43,18 +69,16 @@ local function createTrackingPlatform()
     Platform.CanCollide = true
     Platform.Parent = workspace
 
-    -- Update platform position every heartbeat
     local connection
     connection = RunService.Heartbeat:Connect(function()
         if Platform and Character and Character.PrimaryPart then
             Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
         else
-            connection:Disconnect() -- Stop updating if something is missing
+            connection:Disconnect()
         end
     end)
 end
 
--- Function to remove the platform
 local function removePlatform()
     if Platform then
         Platform:Destroy()
@@ -62,50 +86,37 @@ local function removePlatform()
     end
 end
 
--- Function to retrieve the animation details based on move name
-function getAnimationData(move)
-    return Animations[move]  -- Return the animation data directly
+local function getAnimationData(move)
+    return Animations[move]
 end
 
--- Constantly check if any animation is playing
+-- Animation Detection Loop
+
 RunService.RenderStepped:Connect(function()
     if #selectedMovesFlag > 0 then
         for _, move in ipairs(selectedMovesFlag) do
             local animationData = getAnimationData(move)
-            
-            -- Ensure that animationData is not nil
-            if animationData then
-                local animationName = move
-                local delayBeforeTeleport = animationData.delay
-                local durationBeforeUndo = animationData.duration
 
-                if animationName and isAnimationPlaying(animationName) then
-                    if not DetectionHalted then
-                        DetectionHalted = true -- Halt detections
-                        -- Wait for the animation's delay minus 0.00001 seconds to capture the position exactly before teleport
-                        task.wait(delayBeforeTeleport - 0.00001) -- Wait until the last moment before teleporting
+            if animationData and isAnimationPlaying(move) and not DetectionHalted then
+                DetectionHalted = true
 
-                        -- Save the player's original position just before teleporting
-                        OriginalPosition = Character.PrimaryPart.Position
+                task.wait(animationData.delay - 0.00001)
+                OriginalPosition = Character.PrimaryPart.Position
 
-                        task.wait(0.00001) -- Adding a very small wait to simulate "just before" teleport
+                task.wait(0.00001)
 
-                        -- Now proceed with the teleportation
-                        freezeCamera() -- Freeze camera
-                        createTrackingPlatform() -- Create platform
-                        teleportPlayer(Vector3.new(OriginalPosition.X, TargetY, OriginalPosition.Z)) -- Move player to -490 Y level
+                freezeCamera()
+                createTrackingPlatform()
+                teleportPlayer(Vector3.new(OriginalPosition.X, TargetY, OriginalPosition.Z))
 
-                        task.wait(durationBeforeUndo) -- Stay at -490 for the set duration
+                task.wait(animationData.duration)
 
-                        teleportPlayer(OriginalPosition) -- Move player back to original location
-                        unfreezeCamera() -- Unfreeze camera
-                        removePlatform() -- Remove platform
+                teleportPlayer(OriginalPosition)
+                unfreezeCamera()
+                removePlatform()
 
-                        DetectionHalted = false -- Resume detections
-                    end
-                end
+                DetectionHalted = false
             end
         end
     end
 end)
-
