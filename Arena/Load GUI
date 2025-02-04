@@ -28,17 +28,16 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 local VoidKillSection = MainTab:CreateSection("Void Kill")
 
 -- Create status label
-local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel(
-   "Void Kill Status: OFF",
-   4483362458,
-   Color3.fromRGB(255, 0, 0),
-   true
-)
+local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel("Void Kill Status: OFF")
 
 -- Create dropdown
 local VoidKillMovesDropdown = MainTab:CreateDropdown({
    Name = "Void Kill (Moves)",
-   Options = {"Flowing Water", "Lethal Whirlwind Stream", "Foul Ball", "Atmos Cleave", "Pinpoint Cut", "Crushing Pull", "Bullet Barrage", "Head First"},
+   Options = {
+      "Flowing Water", "Lethal Whirlwind Stream", "Foul Ball",
+      "Atmos Cleave", "Pinpoint Cut", "Crushing Pull",
+      "Bullet Barrage", "Head First"
+   },
    CurrentOption = nil,
    MultipleOptions = true,
    Flag = "VoidKillMovesDropdown1",
@@ -47,22 +46,37 @@ local VoidKillMovesDropdown = MainTab:CreateDropdown({
 
        if #Options > 0 then
            local selectedMoves = "[" .. table.concat(Options, "], [") .. "]"
-           VoidKillMovesDropdownStateLabel:Set(
-               "Void Kill Status: ON { Moves Selected: " .. selectedMoves .. " }",
-               4483362458,
-               Color3.fromRGB(0, 255, 0),
-               true
+           VoidKillMovesDropdownStateLabel:SetText(
+               "Void Kill Status: ON { Moves Selected: " .. selectedMoves .. " }"
            )
+           VoidKillMovesDropdownStateLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
        else
-           VoidKillMovesDropdownStateLabel:Set(
-               "Void Kill Status: OFF",
-               4483362458,
-               Color3.fromRGB(255, 0, 0),
-               true
-           )
+           VoidKillMovesDropdownStateLabel:SetText("Void Kill Status: OFF")
+           VoidKillMovesDropdownStateLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
        end
    end,
 })
 
--- Execute the Void Kill Script (Ensure it's loaded first)
-loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Void%20Kill%20Functionality'))()
+-- Load Void Kill Script & Handle Errors
+local function LoadVoidKillScript()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Void%20Kill%20Functionality'))()
+    end)
+
+    if success then
+        print("✅ Void Kill Script Loaded Successfully!")
+    else
+        warn("❌ Failed to Load Void Kill Script:", err)
+    end
+end
+
+LoadVoidKillScript() -- Initial Load
+
+-- Ensure Void Kill Script Works After Respawn
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+LocalPlayer.CharacterAdded:Connect(function()
+    wait(1) -- Small delay to ensure everything loads
+    LoadVoidKillScript() -- Reload Void Kill Script
+end)
