@@ -55,6 +55,10 @@ local function teleportPlayer(position)
 end
 
 local function createTrackingPlatform()
+    if Platform then
+        Platform:Destroy()
+    end
+
     Platform = Instance.new("Part")
     Platform.Size = Vector3.new(100, 1, 100)
     Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
@@ -87,6 +91,9 @@ end
 local function onCharacterAdded(newCharacter)
     Character = newCharacter
     Humanoid = Character:WaitForChild("Humanoid")
+
+    -- Ensure PrimaryPart exists before proceeding
+    repeat wait() until Character.PrimaryPart
 end
 
 -- Connect to CharacterAdded to handle respawning
@@ -94,7 +101,7 @@ LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 
 -- Animation Detection Loop
 RunService.RenderStepped:Connect(function()
-    if #getgenv().SelectedMovesFlag > 0 then
+    if #getgenv().SelectedMovesFlag > 0 and Character and Character.PrimaryPart then
         for _, move in ipairs(getgenv().SelectedMovesFlag) do
             local animationData = getAnimationData(move)
 
