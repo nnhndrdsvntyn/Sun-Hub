@@ -126,5 +126,3 @@ end)
 getgenv().UpdateSelectedMoves = function(moves)
     getgenv().SelectedMovesFlag = moves
 end
-
-print("\n\n\n\n     ✅ Loaded Void Kill Functionality\n     ❗ Version: "..Version)
