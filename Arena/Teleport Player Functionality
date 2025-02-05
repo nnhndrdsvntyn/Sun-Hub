@@ -1,0 +1,56 @@
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Stores the selected player
+getgenv().SelectedPlayer = nil
+
+-- Function to get a list of all players excluding the local player
+getgenv().GetPlayerList = function()
+    local playerNames = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerNames, player.Name)
+        end
+    end
+    return playerNames
+end
+
+-- Function to teleport the player
+getgenv().TeleportToSelectedPlayer = function()
+    if getgenv().SelectedPlayer then
+        print("🔍 Attempting to teleport to:", getgenv().SelectedPlayer)
+
+        local TargetPlayer = Players:FindFirstChild(getgenv().SelectedPlayer)
+
+        if TargetPlayer then
+            print("✅ Found player:", TargetPlayer.Name)
+
+            if TargetPlayer.Character and TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                print("🎯 Target player's HumanoidRootPart found!")
+
+                -- Ensure local player character is valid
+                if LocalPlayer.Character then
+                    local LocalRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+                    if LocalRoot then
+                        -- Teleport local player to target player
+                        print("🚀 Teleporting to:", TargetPlayer.Name)
+                        LocalRoot.CFrame = TargetPlayer.Character.HumanoidRootPart.CFrame
+                    else
+                        warn("❌ Local player's HumanoidRootPart not found!")
+                    end
+                else
+                    warn("❌ Local player character not found!")
+                end
+            else
+                warn("❌ Target player does not have a valid HumanoidRootPart!")
+            end
+        else
+            warn("❌ Target player not found in Players service!")
+        end
+    else
+        warn("❌ No player selected for teleportation!")
+    end
+end
