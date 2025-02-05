@@ -30,3 +30,10 @@ getgenv().TeleportToSelectedPlayer = function()
         end
     end
 end
+
+-- Function to manually refresh dropdown values
+getgenv().RefreshTeleportDropdown = function()
+    if getgenv().SelectTeleportPlayerDropdown then
+        getgenv().SelectTeleportPlayerDropdown:Refresh(getgenv().GetPlayerList())
+    end
+end
