@@ -60,7 +60,7 @@ local function createTrackingPlatform()
     end
 
     Platform = Instance.new("Part")
-    Platform.Size = Vector3.new(100, 1, 100)
+    Platform.Size = Vector3.new(1000, 1, 1000)
     Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
     Platform.Anchored = true
     Platform.CanCollide = true
