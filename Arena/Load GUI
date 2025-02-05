@@ -27,8 +27,16 @@ local Window = SunHub_TSBG_MainArena:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 local VoidKillSection = MainTab:CreateSection("Void Kill")
 
+-- Persistent selected moves storage
+getgenv().SelectedMovesFlag = getgenv().SelectedMovesFlag or {}
+
 -- Create status label
-local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel("Void Kill Status: OFF")
+local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel(
+   "Void Kill Status: OFF",
+   4483362458,
+   Color3.fromRGB(255, 0, 0),
+   true
+)
 
 -- Create dropdown
 local VoidKillMovesDropdown = MainTab:CreateDropdown({
@@ -38,21 +46,34 @@ local VoidKillMovesDropdown = MainTab:CreateDropdown({
       "Atmos Cleave", "Pinpoint Cut", "Crushing Pull",
       "Bullet Barrage", "Head First"
    },
-   CurrentOption = nil,
+   CurrentOption = getgenv().SelectedMovesFlag, -- Persist selection after respawn
    MultipleOptions = true,
    Flag = "VoidKillMovesDropdown1",
    Callback = function(Options)
+       if type(Options) ~= "table" then
+           warn("Dropdown Callback Error: Options is not a table!")
+           return
+       end
+
+       getgenv().SelectedMovesFlag = Options -- Save selections globally
+
        getgenv().UpdateSelectedMoves(Options) -- Call function from Void Kill Script
 
        if #Options > 0 then
            local selectedMoves = "[" .. table.concat(Options, "], [") .. "]"
-           VoidKillMovesDropdownStateLabel:SetText(
-               "Void Kill Status: ON { Moves Selected: " .. selectedMoves .. " }"
+           VoidKillMovesDropdownStateLabel:Set(
+               "Void Kill Status: ON { Moves Selected: " .. selectedMoves .. " }",
+               4483362458,
+               Color3.fromRGB(0, 255, 0),
+               true
            )
-           VoidKillMovesDropdownStateLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
        else
-           VoidKillMovesDropdownStateLabel:SetText("Void Kill Status: OFF")
-           VoidKillMovesDropdownStateLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+           VoidKillMovesDropdownStateLabel:Set(
+               "Void Kill Status: OFF",
+               4483362458,
+               Color3.fromRGB(255, 0, 0),
+               true
+           )
        end
    end,
 })
@@ -77,6 +98,19 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 LocalPlayer.CharacterAdded:Connect(function()
-    wait(1) -- Small delay to ensure everything loads
-    LoadVoidKillScript() -- Reload Void Kill Script
+    wait(0.5) -- Small delay to ensure everything loads
+
+    -- Reset dropdown to none selected when dying
+    VoidKillMovesDropdown:Set(nil)
+
+    wait(0.5) -- Small delay before restoring selections
+
+    -- Restore previous selection
+    VoidKillMovesDropdown:Set(getgenv().SelectedMovesFlag)
+
+    -- Reload Void Kill Script
+    LoadVoidKillScript()
+
+    -- Restore Void Kill moves automatically
+    getgenv().UpdateSelectedMoves(getgenv().SelectedMovesFlag)
 end)
