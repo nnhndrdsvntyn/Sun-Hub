@@ -44,7 +44,7 @@ local VoidKillMovesDropdown = MainTab:CreateDropdown({
    Options = {
       "Flowing Water", "Lethal Whirlwind Stream", "Foul Ball",
       "Atmos Cleave", "Pinpoint Cut", "Crushing Pull",
-      "Bullet Barrage", "Head First"
+      "Bullet Barrage", "Head First", " "
    },
    CurrentOption = getgenv().SelectedMovesFlag, -- Persist selection after respawn
    MultipleOptions = true,
@@ -101,7 +101,7 @@ LocalPlayer.CharacterAdded:Connect(function()
     wait(0.5) -- Small delay to ensure everything loads
 
     -- Reset dropdown to none selected when dying
-    VoidKillMovesDropdown:Set(nil)
+    VoidKillMovesDropdown:Set(" ")
 
     wait(0.5) -- Small delay before restoring selections
 
@@ -114,3 +114,103 @@ LocalPlayer.CharacterAdded:Connect(function()
     -- Restore Void Kill moves automatically
     getgenv().UpdateSelectedMoves(getgenv().SelectedMovesFlag)
 end)
+
+-- UI Elements
+local TeleportTab = Window:CreateTab("Teleport", "navigation")
+
+local MapTeleportSection = TeleportTab:CreateSection("Map Teleport")
+
+-- Stores selected map location
+local SelectedMapLocation = nil
+
+local SelectMapTeleportDropdown = TeleportTab:CreateDropdown({
+   Name = "Teleport Map",
+   Options = {
+       "Arena Center", "Mountain 1", "Mountain 2",
+       "Void Platform (Only You Can See And Stand On)", "Sky Platform (Only You Can See And Stand On)",
+       "Death Counter Room (Inside)", "Death Counter Room (Outside)",
+       "Atomic Slash Room (Inside)", "Atomic Slash Room (Outside)",
+       "Blank Plate"
+   },
+   CurrentOption = nil,
+   MultipleOptions = false,
+   Flag = "SelectMapTeleportDropdown1",
+   Callback = function(OptionTable)
+       if OptionTable and OptionTable[1] then
+           SelectedMapLocation = OptionTable[1]
+       else
+           SelectedMapLocation = nil
+       end
+   end,
+})
+
+local ActivateMapTeleportButton = TeleportTab:CreateButton({
+   Name = "Teleport to selected map location",
+   Callback = function()
+       if not SelectedMapLocation then return end
+
+       local TeleportLocations = {
+           ["Arena Center"] = Vector3.new(157, 441, 23),
+           ["Mountain 1"] = Vector3.new(275, 699, 395),
+           ["Mountain 2"] = Vector3.new(1, 653, -344),
+           ["Void Platform (Only You Can See And Stand On)"] = Vector3.new(0, -494, 0),
+           ["Sky Platform (Only You Can See And Stand On)"] = Vector3.new(-971971, 10001, 971971),
+           ["Death Counter Room (Inside)"] = Vector3.new(-64, 43, 20334),
+           ["Death Counter Room (Outside)"] = Vector3.new(-75, 84, 20351),
+           ["Atomic Slash Room (Inside)"] = Vector3.new(1058, 133, 23007),
+           ["Atomic Slash Room (Outside)"] = Vector3.new(1058, 180, 23007),
+           ["Blank Plate"] = Vector3.new(1058, 406, 23007)
+       }
+
+       local TeleportPosition = TeleportLocations[SelectedMapLocation]
+
+       if TeleportPosition and game.Players.LocalPlayer.Character then
+           local Character = game.Players.LocalPlayer.Character
+           local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+
+           if HumanoidRootPart then
+               HumanoidRootPart.CFrame = CFrame.new(TeleportPosition)
+           end
+       end
+   end,
+})
+
+local PlayersAndMapTeleportsDivider = TeleportTab:CreateDivider()
+
+local PlayerTeleportSection = TeleportTab:CreateSection("Players Teleport")
+
+-- Load the teleport functionality
+loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Teleport%20Player%20Functionality"))() -- Replace with your actual URL
+
+-- Create dropdown for teleportation (STARTS EMPTY)
+getgenv().SelectTeleportPlayerDropdown = TeleportTab:CreateDropdown({
+   Name = "Teleport To Player",
+   Options = {}, -- Empty at start
+   CurrentOption = nil,
+   MultipleOptions = false,
+   Flag = "TeleportPlayerDropdown1",
+   Callback = function(OptionTable)
+       -- Only update selected player if manually chosen
+       if OptionTable and OptionTable[1] then
+           getgenv().SelectedPlayer = OptionTable[1]
+       else
+           getgenv().SelectedPlayer = nil
+       end
+   end,
+})
+
+-- Create teleport button
+local ActivateTeleportPlayerButton = TeleportTab:CreateButton({
+   Name = "Teleport to selected player",
+   Callback = function()
+       getgenv().TeleportToSelectedPlayer()
+   end,
+})
+
+-- Create button to manually refresh the dropdown
+local RefreshTeleportDropdownButton = TeleportTab:CreateButton({
+   Name = "Refresh Player List",
+   Callback = function()
+       getgenv().RefreshTeleportDropdown()
+   end,
+})
