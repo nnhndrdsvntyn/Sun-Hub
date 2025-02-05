@@ -1,121 +1,218 @@
--- Function to check if the VoidPlatform already exists
-local function checkVoidPlatformExists()
-    for _, obj in pairs(game.Workspace:GetChildren()) do
-        if obj:IsA("Part") and obj.Name == "VoidPlatform" then
-            return true
-        end
+-- Load UI Framework
+local SunHub_TSBG_MainArena = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Create UI Window
+local Window = SunHub_TSBG_MainArena:CreateWindow({
+   Name = "Sun Hub TSBG",
+   Icon = 0,
+   LoadingTitle = "Loading Sun Hub",
+   LoadingSubtitle = "For TSBG",
+   Theme = "Default",
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Big Hub"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false
+})
+
+-- UI Elements
+local MainTab = Window:CreateTab("Main", 4483362458)
+local VoidKillSection = MainTab:CreateSection("Void Kill")
+
+-- Persistent selected moves storage
+getgenv().SelectedMovesFlag = getgenv().SelectedMovesFlag or {}
+
+-- Create status label
+local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel(
+   "Void Kill Status: OFF",
+   4483362458,
+   Color3.fromRGB(255, 0, 0),
+   true
+)
+
+-- Create dropdown
+local VoidKillMovesDropdown = MainTab:CreateDropdown({
+   Name = "Void Kill (Moves)",
+   Options = {
+      "Flowing Water", "Lethal Whirlwind Stream", "Foul Ball",
+      "Atmos Cleave", "Pinpoint Cut", "Crushing Pull",
+      "Bullet Barrage", "Head First","."
+   },
+   CurrentOption = getgenv().SelectedMovesFlag, -- Persist selection after respawn
+   MultipleOptions = true,
+   Flag = "VoidKillMovesDropdown1",
+   Callback = function(Options)
+       if type(Options) ~= "table" then
+           warn("Dropdown Callback Error: Options is not a table!")
+           return
+       end
+
+       getgenv().SelectedMovesFlag = Options -- Save selections globally
+
+       getgenv().UpdateSelectedMoves(Options) -- Call function from Void Kill Script
+
+       if #Options > 0 then
+           local selectedMoves = "[" .. table.concat(Options, "], [") .. "]"
+           VoidKillMovesDropdownStateLabel:Set(
+               "Void Kill Status: ON { Moves Selected: " .. selectedMoves .. " }",
+               4483362458,
+               Color3.fromRGB(0, 255, 0),
+               true
+           )
+       else
+           VoidKillMovesDropdownStateLabel:Set(
+               "Void Kill Status: OFF",
+               4483362458,
+               Color3.fromRGB(255, 0, 0),
+               true
+           )
+       end
+   end,
+})
+
+-- Load Void Kill Script & Handle Errors
+local function LoadVoidKillScript()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Void%20Kill%20Functionality'))()
+    end)
+
+    if success then
+        print("✅ Void Kill Script Loaded Successfully!")
+    else
+        warn("❌ Failed to Load Void Kill Script:", err)
     end
-    return false
 end
 
--- If the platform doesn't exist, create it
-if not checkVoidPlatformExists() then
-    local VoidPlatform = Instance.new("Part")
-    VoidPlatform.Name = "VoidPlatform"
-    VoidPlatform.Shape = Enum.PartType.Cylinder
-    VoidPlatform.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
-    VoidPlatform.Position = Vector3.new(0, -495, 0)
-    VoidPlatform.Anchored = true
-    VoidPlatform.BrickColor = BrickColor.new("Bright blue")
-    VoidPlatform.Material = Enum.Material.Air
-    VoidPlatform.Transparency = 0.75
-    VoidPlatform.CanCollide = true
+LoadVoidKillScript() -- Initial Load
 
-    -- Rotate it to stand upright (aligned with Y-axis)
-    VoidPlatform.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+-- Ensure Void Kill Script Works After Respawn
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-    VoidPlatform.Parent = game.Workspace
-end
+LocalPlayer.CharacterAdded:Connect(function()
+    wait(0.5) -- Small delay to ensure everything loads
 
-wait(0.001)
+    -- Reset dropdown to none selected when dying
+    VoidKillMovesDropdown:Set(".")
 
--- Function to check if the SkyPlatform already exists
-local function checkSkyPlatformExists()
-    for _, obj in pairs(game.Workspace:GetChildren()) do
-        if obj:IsA("Part") and obj.Name == "SkyPlatform" then
-            return true
-        end
-    end
-    return false
-end
+    wait(0.5) -- Small delay before restoring selections
 
--- If the platform doesn't exist, create it
-if not checkSkyPlatformExists() then
-    local SkyPlatform = Instance.new("Part")
-    SkyPlatform.Name = "SkyPlatform"
-    SkyPlatform.Shape = Enum.PartType.Cylinder
-    SkyPlatform.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
-    SkyPlatform.Position = Vector3.new(-971971, 10000, 971971)
-    SkyPlatform.Anchored = true
-    SkyPlatform.BrickColor = BrickColor.new("Bright blue")
-    SkyPlatform.Material = Enum.Material.Air
-    SkyPlatform.Transparency = 0.75
-    SkyPlatform.CanCollide = true
+    -- Restore previous selection
+    VoidKillMovesDropdown:Set(getgenv().SelectedMovesFlag)
 
-    -- Rotate it to stand upright (aligned with Y-axis)
-    SkyPlatform.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+    -- Reload Void Kill Script
+    LoadVoidKillScript()
 
-    SkyPlatform.Parent = game.Workspace
-end
+    -- Restore Void Kill moves automatically
+    getgenv().UpdateSelectedMoves(getgenv().SelectedMovesFlag)
+end)
 
-wait(0.001)
+-- UI Elements
+local TeleportTab = Window:CreateTab("Teleport", "navigation")
 
--- Function to check if the PixelsPlatformv1 already exists
-local function checkPixelsPlatformv1Exists()
-    for _, obj in pairs(game.Workspace:GetChildren()) do
-        if obj:IsA("Part") and obj.Name == "PixelsPlatformv1" then
-            return true
-        end
-    end
-    return false
-end
+local PlayerTeleportSection = TeleportTab:CreateSection("Players Teleport")
 
--- If the platform doesn't exist, create it
-if not checkPixelsPlatformv1Exists() then
-    local PixelsPlatformv1 = Instance.new("Part")
-    PixelsPlatformv1.Name = "PixelsPlatformv1"
-    PixelsPlatformv1.Shape = Enum.PartType.Cylinder
-    PixelsPlatformv1.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
-    PixelsPlatformv1.Position = Vector3.new(-971971, 9999995, 971971)
-    PixelsPlatformv1.Anchored = true
-    PixelsPlatformv1.BrickColor = BrickColor.new("Bright blue")
-    PixelsPlatformv1.Material = Enum.Material.Air
-    PixelsPlatformv1.Transparency = 0.75
-    PixelsPlatformv1.CanCollide = true
+-- Load the teleport functionality
+loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Teleport%20Player%20Functionality"))() -- Replace with your actual URL
 
-    -- Rotate it to stand upright (aligned with Y-axis)
-    PixelsPlatformv1.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+-- Create dropdown for teleportation (STARTS EMPTY)
+getgenv().SelectTeleportPlayerDropdown = TeleportTab:CreateDropdown({
+   Name = "Teleport To Player",
+   Options = {}, -- Empty at start
+   CurrentOption = nil,
+   MultipleOptions = false,
+   Flag = "TeleportPlayerDropdown1",
+   Callback = function(OptionTable)
+       -- Only update selected player if manually chosen
+       if OptionTable and OptionTable[1] then
+           getgenv().SelectedPlayer = OptionTable[1]
+       else
+           getgenv().SelectedPlayer = nil
+       end
+   end,
+})
 
-    PixelsPlatformv1.Parent = game.Workspace
-end
+-- Create teleport button
+local ActivateTeleportPlayerButton = TeleportTab:CreateButton({
+   Name = "Teleport to selected player",
+   Callback = function()
+       getgenv().TeleportToSelectedPlayer()
+   end,
+})
 
-wait(0.001)
+-- Create button to manually refresh the dropdown
+local RefreshTeleportDropdownButton = TeleportTab:CreateButton({
+   Name = "Refresh Player List",
+   Callback = function()
+       getgenv().RefreshTeleportDropdown()
+   end,
+})
 
--- Function to check if the PixelsPlatformv2 already exists
-local function checkPixelsPlatformv2Exists()
-    for _, obj in pairs(game.Workspace:GetChildren()) do
-        if obj:IsA("Part") and obj.Name == "PixelsPlatformv2" then
-            return true
-        end
-    end
-    return false
-end
+getgenv().RefreshTeleportDropdown()
 
--- If the platform doesn't exist, create it
-if not checkPixelsPlatformv2Exists() then
-    local PixelsPlatformv2 = Instance.new("Part")
-    PixelsPlatformv2.Name = "PixelsPlatformv2"
-    PixelsPlatformv2.Shape = Enum.PartType.Cylinder
-    PixelsPlatformv2.Size = Vector3.new(1, 2048, 5000) -- Adjusted for a proper upright look
-    PixelsPlatformv2.Position = Vector3.new(-971971, 99999995, 971971)
-    PixelsPlatformv2.Anchored = true
-    PixelsPlatformv2.BrickColor = BrickColor.new("Bright blue")
-    PixelsPlatformv2.Material = Enum.Material.Air
-    PixelsPlatformv2.Transparency = 0.75
-    PixelsPlatformv2.CanCollide = true
+local PlayersAndMapTeleportsDivider = TeleportTab:CreateDivider()
 
-    -- Rotate it to stand upright (aligned with Y-axis)
-    PixelsPlatformv2.Orientation = Vector3.new(0, 0, 90) -- Alternative: Use CFrame
+local MapTeleportSection = TeleportTab:CreateSection("Map Teleport")
 
-    PixelsPlatformv2.Parent = game.Workspace
-end
+-- Stores selected map location
+local SelectedMapLocation = nil
+
+local SelectMapTeleportDropdown = TeleportTab:CreateDropdown({
+   Name = "Teleport Map",
+   Options = {
+       "Arena Center", "Mountain 1", "Mountain 2",
+       "Void Platform (Only You Can See And Stand On)", "Sky Platform (Only You Can See And Stand On)",
+       "Death Counter Room (Inside)", "Death Counter Room (Outside)",
+       "Atomic Slash Room (Inside)", "Atomic Slash Room (Outside)",
+       "Blank Plate"
+   },
+   CurrentOption = nil,
+   MultipleOptions = false,
+   Flag = "SelectMapTeleportDropdown1",
+   Callback = function(OptionTable)
+       if OptionTable and OptionTable[1] then
+           SelectedMapLocation = OptionTable[1]
+       else
+           SelectedMapLocation = nil
+       end
+   end,
+})
+
+local ActivateMapTeleportButton = TeleportTab:CreateButton({
+   Name = "Teleport to selected map location",
+   Callback = function()
+       if not SelectedMapLocation then return end
+
+       local TeleportLocations = {
+           ["Arena Center"] = Vector3.new(157, 441, 23),
+           ["Mountain 1"] = Vector3.new(275, 699, 395),
+           ["Mountain 2"] = Vector3.new(1, 653, -344),
+           ["Void Platform (Only You Can See And Stand On)"] = Vector3.new(0, -494, 0),
+           ["Sky Platform (Only You Can See And Stand On)"] = Vector3.new(-971971, 10001, 971971),
+           ["Death Counter Room (Inside)"] = Vector3.new(-64, 43, 20334),
+           ["Death Counter Room (Outside)"] = Vector3.new(-75, 84, 20351),
+           ["Atomic Slash Room (Inside)"] = Vector3.new(1058, 133, 23007),
+           ["Atomic Slash Room (Outside)"] = Vector3.new(1058, 180, 23007),
+           ["Blank Plate"] = Vector3.new(1058, 406, 23007)
+       }
+
+       local TeleportPosition = TeleportLocations[SelectedMapLocation]
+
+       if TeleportPosition and game.Players.LocalPlayer.Character then
+           local Character = game.Players.LocalPlayer.Character
+           local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+
+           if HumanoidRootPart then
+               HumanoidRootPart.CFrame = CFrame.new(TeleportPosition)
+           end
+       end
+   end,
+})
