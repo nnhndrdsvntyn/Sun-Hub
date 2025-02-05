@@ -37,3 +37,5 @@ getgenv().RefreshTeleportDropdown = function()
         getgenv().SelectTeleportPlayerDropdown:Refresh(getgenv().GetPlayerList())
     end
 end
+
+getgenv().RefreshTeleportDropdown()
