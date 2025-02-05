@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Stores the selected player
+-- Stores the selected player (starts as nil)
 getgenv().SelectedPlayer = nil
 
 -- Function to get a list of all players excluding the local player
