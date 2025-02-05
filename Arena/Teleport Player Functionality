@@ -18,24 +18,15 @@ end
 
 -- Function to teleport the player
 getgenv().TeleportToSelectedPlayer = function()
-    if getgenv().SelectedPlayer then
-        print("🔍 Attempting to teleport to:", getgenv().SelectedPlayer)
+    if not getgenv().SelectedPlayer then return end
 
-        local TargetPlayer = Players:FindFirstChild(getgenv().SelectedPlayer)
+    local TargetPlayer = Players:FindFirstChild(getgenv().SelectedPlayer)
 
-        if TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local LocalRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local LocalRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
-            if LocalRoot then
-                print("🚀 Teleporting to:", TargetPlayer.Name)
-                LocalRoot.CFrame = TargetPlayer.Character.HumanoidRootPart.CFrame
-            else
-                warn("❌ Local player's HumanoidRootPart not found!")
-            end
-        else
-            warn("❌ Target player is invalid or missing HumanoidRootPart!")
+        if LocalRoot then
+            LocalRoot.CFrame = TargetPlayer.Character.HumanoidRootPart.CFrame
         end
-    else
-        warn("❌ No player selected for teleportation!")
     end
 end
