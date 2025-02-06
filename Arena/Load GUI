@@ -115,6 +115,159 @@ LocalPlayer.CharacterAdded:Connect(function()
     getgenv().UpdateSelectedMoves(getgenv().SelectedMovesFlag)
 end)
 
+local VoidKillAndAntiSectionDivider = MainTab:CreateDivider()
+
+local AntiSection = MainTab:CreateSection("Anti")
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+local originalCameraType = camera.CameraType
+local PLATFORM_POSITION = Vector3.new(0, -499, 0)
+local PLATFORM_SIZE = Vector3.new(1000, 1, 1000)
+local TELEPORT_OFFSET = Vector3.new(0, 1, 0)
+local DURATION = 4
+
+getgenv().AntiDeathCounterActive = false
+
+-- Create platform function
+local function createPlatform()
+    local platform = Instance.new("Part")
+    platform.Size = PLATFORM_SIZE
+    platform.Position = PLATFORM_POSITION
+    platform.Anchored = true
+    platform.Transparency = 1
+    platform.BrickColor = BrickColor.Gray()
+    platform.Parent = Workspace
+    return platform
+end
+
+-- Function to handle the animation play
+local function handleAnimationPlay(animationTrack)
+    if not getgenv().AntiDeathCounterActive then return end
+
+    if animationTrack.Animation.AnimationId == "rbxassetid://11343250001" then
+        camera.CameraType = Enum.CameraType.Scriptable
+        
+        -- Save the original position before teleporting
+        local originalPosition = player.Character and player.Character.PrimaryPart.Position or nil
+        
+        if not originalPosition then
+            print("Could not save the player's original position.")
+            return
+        end
+        
+        local platform = createPlatform()
+        
+        if player.Character then
+            -- Teleport the player to the platform
+            player.Character:PivotTo(CFrame.new(PLATFORM_POSITION + TELEPORT_OFFSET))
+        end
+
+        local removeGuiConnection
+        removeGuiConnection = RunService.Heartbeat:Connect(function()
+            local playerGui = player:FindFirstChild("PlayerGui")
+            if playerGui then
+                local deathGui = playerGui:FindFirstChild("Death")
+                if deathGui then
+                    deathGui:Destroy()
+                end
+            end
+        end)
+
+        -- After 4 seconds, teleport the player back to their original position
+        task.delay(DURATION, function()
+            if player.Character then
+                -- Teleport player back to original position
+                player.Character:PivotTo(CFrame.new(originalPosition))
+            end
+            camera.CameraType = originalCameraType
+            if platform then platform:Destroy() end
+            if removeGuiConnection then removeGuiConnection:Disconnect() end
+        end)
+    end
+end
+
+-- Function to reattach animation handler after character respawn
+local function onCharacterAdded(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.Animator.AnimationPlayed:Connect(handleAnimationPlay)
+end
+
+-- Listen for character respawn and reattach event handler
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- Ensure the handler is attached if the player has already spawned
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+
+-- Handle dropdown for Anti Death Counter
+local AntiUltimates_OneShotMovesDropdown = MainTab:CreateDropdown({
+   Name = "Anti (Ultimate/1 Shot Moves)",
+   Options = {"Anti Death Counter", "Anti Tableflip", "Anti Serious Punch", "Anti Omni Directional Kick", "Anti Incinerate", "Anti Death Blow"},
+   CurrentOption = nil,
+   MultipleOptions = false,
+   Flag = "AntiUltimates_OneShotMovesDropdown1",
+   Callback = function(Options)
+       if Options and Options[1] == "Anti Death Counter" then
+           getgenv().AntiDeathCounterActive = true
+       else
+           getgenv().AntiDeathCounterActive = false
+       end
+   end,
+})
+
+-- Remove specific children for 10 seconds
+local objectsToRemove = {
+    "NoBlock",
+    "NoJump",
+    "Freeze",
+    "ComboStun",
+    "UsedDash",
+    "M1ing",
+    "StopRunning",
+    "NoRotate",
+    "NoRotateUltimate"
+}
+
+-- Function to remove the specified children
+local function removeSpecificChildren()
+    -- Get the player's character model
+    if player.Character and player.Character.Parent then
+        for _, child in pairs(player.Character:GetChildren()) do
+            -- Check if the child is in the list of objects to remove
+            for _, objectName in pairs(objectsToRemove) do
+                if child.Name == objectName then
+                    -- Remove the child
+                    child:Destroy()
+                    print("Removed:", child:GetFullName())
+                end
+            end
+        end
+    end
+end
+
+-- Run the remove function every heartbeat for 10 seconds
+local heartbeatConnection
+local removeTime = 10  -- Time in seconds before stopping
+local startTime = tick()  -- Get the current time
+
+heartbeatConnection = RunService.Heartbeat:Connect(function()
+    -- Check if 10 seconds have passed
+    if tick() - startTime >= removeTime then
+        -- Stop the heartbeat function after 10 seconds
+        heartbeatConnection:Disconnect()
+        print("Stopped removing objects after 10 seconds.")
+    else
+        -- Continue removing objects every heartbeat
+        removeSpecificChildren()
+    end
+end)
+
 -- UI Elements
 local TeleportTab = Window:CreateTab("Teleport", "navigation")
 
