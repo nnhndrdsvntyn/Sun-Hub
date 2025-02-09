@@ -1,0 +1,45 @@
+local library = {}
+
+-- Create UI ScreenGui
+local function createScreenGui()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    return screenGui
+end
+
+local function createWindow(title)
+    local screenGui = createScreenGui()
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 200)
+    frame.Position = UDim2.new(0.5, -150, 0.5, -100)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    frame.Parent = screenGui
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0, 30)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.Parent = frame
+    
+    return frame
+end
+
+local function createButton(parent, text, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 100, 0, 40)
+    button.Position = UDim2.new(0.5, -50, 0.5, 0)
+    button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Parent = parent
+    
+    button.MouseButton1Click:Connect(callback)
+end
+
+-- API for users
+library.createWindow = createWindow
+library.createButton = createButton
+
+return library
