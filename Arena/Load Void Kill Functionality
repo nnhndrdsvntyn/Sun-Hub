@@ -99,8 +99,3 @@ localPlayer.CharacterAdded:Connect(function()
    task.wait(1)
    RunService.Heartbeat:Connect(detectAnimation)
 end)
-
--- Creating toggles for each move
-for name, _ in pairs(animations) do
-   createToggle(name)
-end
