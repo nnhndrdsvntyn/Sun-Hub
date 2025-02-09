@@ -1,135 +1,106 @@
--- Load required services
+-- Animation Teleportation System
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = game.Workspace.CurrentCamera
 
--- Variables
-local DetectionHalted = false
-local Platform
-local OriginalPosition
-local TargetY = -497.9
-local PlatformY = -499.9
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
+local localPlayer = Players.LocalPlayer
+local function getCharacter()
+   return localPlayer.Character or localPlayer.CharacterAdded:Wait()
+end
 
--- Animation data
-local Animations = {
-    ["Flowing Water"] = {id = "12273188754", delay = 0.85, duration = 2},
-    ["Lethal Whirlwind Stream"] = {id = "12296113986", delay = 1, duration = 1.5},
-    ["Foul Ball"] = {id = "14705929107", delay = 1.75, duration = 1.5},
-    ["Atmos Cleave"] = {id = "15145462680", delay = 1.75, duration = 2},
-    ["Pinpoint Cut"] = {id = "15295895753", delay = 0.85, duration = 2},
-    ["Crushing Pull"] = {id = "16139108718", delay = 0.00000000000000000000000000000000001, duration = 1.3},
-    ["Bullet Barrage"] = {id = "17799224866", delay = 2, duration = 2.5},
-    ["Head First"] = {id = "18182425133", delay = 1.5, duration = 4}
+local function getAnimator()
+   local character = getCharacter()
+   local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+   return humanoid and humanoid:FindFirstChildWhichIsA("Animator")
+end
+
+local animations = {
+   ["Flowing Water"] = {id = 12273188754, returnTime = 3.1, startDelay = 0},
+   ["Lethal Whirlwind Stream"] = {id = 12296113986, returnTime = 5, startDelay = 0},
+   ["Foul Ball"] = {id = 14705929107, returnTime = 5, startDelay = 0},
+   ["Atmos Cleave"] = {id = 15145462680, returnTime = 6, startDelay = 0.5},
+   ["Pinpoint Cut"] = {id = 15295895753, returnTime = 4.5, startDelay = 0.9},
+   ["Crushing Pull"] = {id = 16139108718, returnTime = 4.5, startDelay = 0},
+   ["Bullet Barrage"] = {id = 17799224866, returnTime = 5.5, startDelay = 2},
+   ["Head First"] = {id = 18182425133, returnTime = 3.2, startDelay = 0.75, highTp = true}
 }
 
--- Selected moves storage
-getgenv().SelectedMovesFlag = {}
-
--- Utility Functions
-local function isAnimationPlaying(animationName)
-    if Character and Character:FindFirstChild("Humanoid") then
-        for _, track in ipairs(Character.Humanoid:GetPlayingAnimationTracks()) do
-            if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. Animations[animationName].id then
-                return true
-            end
-        end
-    end
-    return false
+local function createPlatform(x, z)
+   local platform = Instance.new("Part")
+   platform.Size = Vector3.new(10, 1, 10)
+   platform.Position = Vector3.new(x, -498, z)
+   platform.Anchored = true
+   platform.Transparency = 1
+   platform.CanCollide = true
+   platform.Parent = workspace
+   return platform
 end
 
-local function freezeCamera()
-    Camera.CameraType = Enum.CameraType.Scriptable
+local function handleAnimation(animName, animData)
+   if not getgenv().VoidBringMoves[animName] then return end
+
+   local character = getCharacter()
+   local rootPart = character:FindFirstChild("HumanoidRootPart")
+   if not rootPart then return end
+
+   local originalCFrame = rootPart.CFrame
+   task.wait(animData.startDelay)
+
+   local animator = getAnimator()
+   local isPlaying = false
+
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
+         isPlaying = true
+         break
+      end
+   end
+   if not isPlaying then return end
+
+   local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
+   local heightOffset = animData.highTp and 50 or 1
+
+   -- Move player to the platform
+   rootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, heightOffset, 0))
+
+   -- Wait for the duration of the animation before teleporting back
+   task.wait(animData.returnTime)
+
+   -- Ensure animation is still playing before teleporting back
+   isPlaying = false
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
+         isPlaying = true
+         break
+      end
+   end
+
+   if isPlaying then
+      rootPart.CFrame = originalCFrame
+   end
 end
 
-local function unfreezeCamera()
-    Camera.CameraType = Enum.CameraType.Custom
+local function detectAnimation()
+   local animator = getAnimator()
+   if not animator then return end
+
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      for name, data in pairs(animations) do
+         if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. data.id then
+            coroutine.wrap(handleAnimation)(name, data)
+         end
+      end
+   end
 end
 
-local function teleportPlayer(position)
-    if Character and Character.PrimaryPart then
-        Character:SetPrimaryPartCFrame(CFrame.new(position))
-    end
-end
+RunService.Heartbeat:Connect(detectAnimation)
 
-local function createTrackingPlatform()
-    if Platform then
-        Platform:Destroy()
-    end
-
-    Platform = Instance.new("Part")
-    Platform.Size = Vector3.new(1000, 1, 1000)
-    Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
-    Platform.Anchored = true
-    Platform.CanCollide = true
-    Platform.Parent = workspace
-
-    local connection
-    connection = RunService.Heartbeat:Connect(function()
-        if Platform and Character and Character.PrimaryPart then
-            Platform.Position = Vector3.new(Character.PrimaryPart.Position.X, PlatformY, Character.PrimaryPart.Position.Z)
-        else
-            connection:Disconnect()
-        end
-    end)
-end
-
-local function removePlatform()
-    if Platform then
-        Platform:Destroy()
-        Platform = nil
-    end
-end
-
-local function getAnimationData(move)
-    return Animations[move]
-end
-
--- Function to reset Character and Humanoid after respawn
-local function onCharacterAdded(newCharacter)
-    Character = newCharacter
-    Humanoid = Character:WaitForChild("Humanoid")
-
-    -- Ensure PrimaryPart exists before proceeding
-    repeat wait() until Character.PrimaryPart
-end
-
--- Connect to CharacterAdded to handle respawning
-LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
-
--- Animation Detection Loop
-RunService.RenderStepped:Connect(function()
-    if #getgenv().SelectedMovesFlag > 0 and Character and Character.PrimaryPart then
-        for _, move in ipairs(getgenv().SelectedMovesFlag) do
-            local animationData = getAnimationData(move)
-
-            if animationData and isAnimationPlaying(move) and not DetectionHalted then
-                DetectionHalted = true
-
-                task.wait(animationData.delay - 0.00001)
-                OriginalPosition = Character.PrimaryPart.Position
-
-                task.wait(0.00001)
-
-                freezeCamera()
-                createTrackingPlatform()
-                teleportPlayer(Vector3.new(OriginalPosition.X, TargetY, OriginalPosition.Z))
-
-                task.wait(animationData.duration)
-
-                teleportPlayer(OriginalPosition)
-                unfreezeCamera()
-                removePlatform()
-
-                DetectionHalted = false
-            end
-        end
-    end
+-- Ensure void bring logic persists after respawn
+localPlayer.CharacterAdded:Connect(function()
+   task.wait(1)
+   RunService.Heartbeat:Connect(detectAnimation)
 end)
 
--- Function to update moves (UI script will call this)
-getgenv().UpdateSelectedMoves = function(moves)
-    getgenv().SelectedMovesFlag = moves
+-- Creating toggles for each move
+for name, _ in pairs(animations) do
+   createToggle(name)
 end
