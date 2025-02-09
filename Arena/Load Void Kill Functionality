@@ -1,101 +1,28 @@
--- Animation Teleportation System
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+if getgenv().VoidKillLoaded then return end
+getgenv().VoidKillLoaded = true
 
+local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer
+
 local function getCharacter()
    return localPlayer.Character or localPlayer.CharacterAdded:Wait()
 end
 
-local function getAnimator()
-   local character = getCharacter()
-   local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-   return humanoid and humanoid:FindFirstChildWhichIsA("Animator")
-end
-
-local animations = {
-   ["Flowing Water"] = {id = 12273188754, returnTime = 3.1, startDelay = 0},
-   ["Lethal Whirlwind Stream"] = {id = 12296113986, returnTime = 5, startDelay = 0},
-   ["Foul Ball"] = {id = 14705929107, returnTime = 5, startDelay = 0},
-   ["Atmos Cleave"] = {id = 15145462680, returnTime = 6, startDelay = 0.5},
-   ["Pinpoint Cut"] = {id = 15295895753, returnTime = 4.5, startDelay = 0.9},
-   ["Crushing Pull"] = {id = 16139108718, returnTime = 4.5, startDelay = 0},
-   ["Bullet Barrage"] = {id = 17799224866, returnTime = 5.5, startDelay = 2},
-   ["Head First"] = {id = 18182425133, returnTime = 3.2, startDelay = 0.75, highTp = true}
-}
-
-local function createPlatform(x, z)
-   local platform = Instance.new("Part")
-   platform.Size = Vector3.new(10, 1, 10)
-   platform.Position = Vector3.new(x, -498, z)
-   platform.Anchored = true
-   platform.Transparency = 1
-   platform.CanCollide = true
-   platform.Parent = workspace
-   return platform
-end
-
-local function handleAnimation(animName, animData)
-   if not getgenv().VoidBringMoves[animName] then return end
-
-   local character = getCharacter()
-   local rootPart = character:FindFirstChild("HumanoidRootPart")
-   if not rootPart then return end
-
-   local originalCFrame = rootPart.CFrame
-   task.wait(animData.startDelay)
-
-   local animator = getAnimator()
-   local isPlaying = false
-
-   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-      if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
-         isPlaying = true
-         break
+local function voidKill()
+   while getgenv().VoidKillEnabled do
+      local character = getCharacter()
+      local rootPart = character:FindFirstChild("HumanoidRootPart")
+      if rootPart then
+         rootPart.CFrame = CFrame.new(0, -500, 0) -- Teleport to void
       end
-   end
-   if not isPlaying then return end
-
-   local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
-   local heightOffset = animData.highTp and 50 or 1
-
-   -- Move player to the platform
-   rootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, heightOffset, 0))
-
-   -- Wait for the duration of the animation before teleporting back
-   task.wait(animData.returnTime)
-
-   -- Ensure animation is still playing before teleporting back
-   isPlaying = false
-   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-      if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
-         isPlaying = true
-         break
-      end
-   end
-
-   if isPlaying then
-      rootPart.CFrame = originalCFrame
+      task.wait(0.1) -- Adjust this for smoother behavior
    end
 end
 
-local function detectAnimation()
-   local animator = getAnimator()
-   if not animator then return end
+task.spawn(voidKill)
 
-   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-      for name, data in pairs(animations) do
-         if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. data.id then
-            coroutine.wrap(handleAnimation)(name, data)
-         end
-      end
-   end
-end
-
-RunService.Heartbeat:Connect(detectAnimation)
-
--- Ensure void bring logic persists after respawn
 localPlayer.CharacterAdded:Connect(function()
-   task.wait(1)
-   RunService.Heartbeat:Connect(detectAnimation)
+   if getgenv().VoidKillEnabled then
+      task.spawn(voidKill)
+   end
 end)
