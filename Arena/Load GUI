@@ -1,322 +1,269 @@
--- Load UI Framework
-local SunHub_TSBG_MainArena = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Load UI Library
+local SunHubTSB_Arena = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Create UI Window
-local Window = SunHub_TSBG_MainArena:CreateWindow({
-   Name = "Sun Hub TSBG",
+local Window = SunHubTSB_Arena:CreateWindow({
+   Name = "The Strongest BattleGrounds",
    Icon = 0,
-   LoadingTitle = "Loading Sun Hub",
-   LoadingSubtitle = "For TSBG",
+   LoadingTitle = "Loading...",
+   LoadingSubtitle = "by nnhn/sun",
    Theme = "Default",
    DisableRayfieldPrompts = false,
    DisableBuildWarnings = false,
+
    ConfigurationSaving = {
       Enabled = true,
       FolderName = nil,
       FileName = "Big Hub"
    },
+
    Discord = {
       Enabled = false,
       Invite = "noinvitelink",
       RememberJoins = true
    },
+
    KeySystem = false
 })
 
--- UI Elements
-local MainTab = Window:CreateTab("Main", 4483362458)
-local VoidKillSection = MainTab:CreateSection("Void Kill")
+local Exploits_Tab = Window:CreateTab("Exploits", "binary")
+local VoidBring_Section = Exploits_Tab:CreateSection("Void Bring Features")
 
--- Persistent selected moves storage
-getgenv().SelectedMovesFlag = getgenv().SelectedMovesFlag or {}
+-- Store toggles using getgenv()
+getgenv().VoidBringMoves = getgenv().VoidBringMoves or {}
 
--- Create status label
-local VoidKillMovesDropdownStateLabel = MainTab:CreateLabel(
-   "Void Kill Status: OFF",
-   4483362458,
-   Color3.fromRGB(255, 0, 0),
-   true
-)
+local function createToggle(name)
+   getgenv().VoidBringMoves[name] = getgenv().VoidBringMoves[name] or false
 
--- Create dropdown
-local VoidKillMovesDropdown = MainTab:CreateDropdown({
-   Name = "Void Kill (Moves)",
-   Options = {
-      "Flowing Water", "Lethal Whirlwind Stream", "Foul Ball",
-      "Atmos Cleave", "Pinpoint Cut", "Crushing Pull",
-      "Bullet Barrage", "Head First", " "
-   },
-   CurrentOption = getgenv().SelectedMovesFlag, -- Persist selection after respawn
-   MultipleOptions = true,
-   Flag = "VoidKillMovesDropdown1",
-   Callback = function(Options)
-       if type(Options) ~= "table" then
-           warn("Dropdown Callback Error: Options is not a table!")
-           return
-       end
-
-       getgenv().SelectedMovesFlag = Options -- Save selections globally
-
-       getgenv().UpdateSelectedMoves(Options) -- Call function from Void Kill Script
-
-       if #Options > 0 then
-           local selectedMoves = "[" .. table.concat(Options, "], [") .. "]"
-           VoidKillMovesDropdownStateLabel:Set(
-               "Void Kill Status: ON { Moves Selected: " .. selectedMoves .. " }",
-               4483362458,
-               Color3.fromRGB(0, 255, 0),
-               true
-           )
-       else
-           VoidKillMovesDropdownStateLabel:Set(
-               "Void Kill Status: OFF",
-               4483362458,
-               Color3.fromRGB(255, 0, 0),
-               true
-           )
-       end
-   end,
-})
-
--- Load Void Kill Script & Handle Errors
-local function LoadVoidKillScript()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Void%20Kill%20Functionality'))()
-    end)
-
-    if success then
-        print("✅ Void Kill Script Loaded Successfully!")
-    else
-        warn("❌ Failed to Load Void Kill Script:", err)
-    end
+   return Exploits_Tab:CreateToggle({
+      Name = "Void Bring On " .. name,
+      CurrentValue = getgenv().VoidBringMoves[name],
+      Flag = "VoidBringMoves_" .. name,
+      Callback = function(Value)
+         getgenv().VoidBringMoves[name] = Value
+      end,
+   })
 end
 
-LoadVoidKillScript() -- Initial Load
-
--- Ensure Void Kill Script Works After Respawn
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-LocalPlayer.CharacterAdded:Connect(function()
-    wait(0.5) -- Small delay to ensure everything loads
-
-    -- Reset dropdown to none selected when dying
-    VoidKillMovesDropdown:Set(" ")
-
-    wait(0.5) -- Small delay before restoring selections
-
-    -- Restore previous selection
-    VoidKillMovesDropdown:Set(getgenv().SelectedMovesFlag)
-
-    -- Reload Void Kill Script
-    LoadVoidKillScript()
-
-    -- Restore Void Kill moves automatically
-    getgenv().UpdateSelectedMoves(getgenv().SelectedMovesFlag)
-end)
-
-local VoidKillAndAntiSectionDivider = MainTab:CreateDivider()
-
-local AntiSection = MainTab:CreateSection("Anti")
-
+-- Animation Teleportation System
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
 
-local player = Players.LocalPlayer
-local camera = Workspace.CurrentCamera
-local originalCameraType = camera.CameraType
-local PLATFORM_POSITION = Vector3.new(0, -499, 0)
-local PLATFORM_SIZE = Vector3.new(1000, 1, 1000)
-local TELEPORT_OFFSET = Vector3.new(0, 1, 0)
-local DURATION = 4
-
-getgenv().AntiDeathCounterActive = false
-
--- Create platform function
-local function createPlatform()
-    local platform = Instance.new("Part")
-    platform.Size = PLATFORM_SIZE
-    platform.Position = PLATFORM_POSITION
-    platform.Anchored = true
-    platform.Transparency = 1
-    platform.BrickColor = BrickColor.Gray()
-    platform.Parent = Workspace
-    return platform
+local localPlayer = Players.LocalPlayer
+local function getCharacter()
+   return localPlayer.Character or localPlayer.CharacterAdded:Wait()
 end
 
--- Function to handle the animation play
-local function handleAnimationPlay(animationTrack)
-    if not getgenv().AntiDeathCounterActive then return end
-
-    if animationTrack.Animation.AnimationId == "rbxassetid://11343250001" then
-        camera.CameraType = Enum.CameraType.Scriptable
-        
-        -- Save the original position before teleporting
-        local originalPosition = player.Character and player.Character.PrimaryPart.Position or nil
-        
-        if not originalPosition then
-            print("Could not save the player's original position.")
-            return
-        end
-        
-        local platform = createPlatform()
-        
-        if player.Character then
-            -- Teleport the player to the platform
-            player.Character:PivotTo(CFrame.new(PLATFORM_POSITION + TELEPORT_OFFSET))
-        end
-
-        local removeGuiConnection
-        removeGuiConnection = RunService.Heartbeat:Connect(function()
-            local playerGui = player:FindFirstChild("PlayerGui")
-            if playerGui then
-                local deathGui = playerGui:FindFirstChild("Death")
-                if deathGui then
-                    deathGui:Destroy()
-                end
-            end
-        end)
-
-        -- After 4 seconds, teleport the player back to their original position
-        task.delay(DURATION, function()
-            if player.Character then
-                -- Teleport player back to original position
-                player.Character:PivotTo(CFrame.new(originalPosition))
-            end
-            camera.CameraType = originalCameraType
-            if platform then platform:Destroy() end
-            if removeGuiConnection then removeGuiConnection:Disconnect() end
-        end)
-    end
+local function getAnimator()
+   local character = getCharacter()
+   local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+   return humanoid and humanoid:FindFirstChildWhichIsA("Animator")
 end
 
--- Function to reattach animation handler after character respawn
-local function onCharacterAdded(character)
-    local humanoid = character:WaitForChild("Humanoid")
-    humanoid.Animator.AnimationPlayed:Connect(handleAnimationPlay)
+local animations = {
+   ["Flowing Water"] = {id = 12273188754, returnTime = 3.1, startDelay = 0},
+   ["Lethal Whirlwind Stream"] = {id = 12296113986, returnTime = 5, startDelay = 0},
+   ["Foul Ball"] = {id = 14705929107, returnTime = 5, startDelay = 0},
+   ["Atmos Cleave"] = {id = 15145462680, returnTime = 6, startDelay = 0.5},
+   ["Pinpoint Cut"] = {id = 15295895753, returnTime = 4.5, startDelay = 0.9},
+   ["Crushing Pull"] = {id = 16139108718, returnTime = 4.5, startDelay = 0},
+   ["Bullet Barrage"] = {id = 17799224866, returnTime = 5.5, startDelay = 2},
+   ["Head First"] = {id = 18182425133, returnTime = 3.2, startDelay = 0.75, highTp = true}
+}
+
+local function createPlatform(x, z)
+   local platform = Instance.new("Part")
+   platform.Size = Vector3.new(10, 1, 10)
+   platform.Position = Vector3.new(x, -498, z)
+   platform.Anchored = true
+   platform.Transparency = 1
+   platform.CanCollide = true
+   platform.Parent = workspace
+   return platform
 end
 
--- Listen for character respawn and reattach event handler
-player.CharacterAdded:Connect(onCharacterAdded)
+local function handleAnimation(animName, animData)
+   if not getgenv().VoidBringMoves[animName] then return end
 
--- Ensure the handler is attached if the player has already spawned
-if player.Character then
-    onCharacterAdded(player.Character)
+   local character = getCharacter()
+   local rootPart = character:FindFirstChild("HumanoidRootPart")
+   if not rootPart then return end
+
+   local originalCFrame = rootPart.CFrame
+   task.wait(animData.startDelay)
+
+   local animator = getAnimator()
+   local isPlaying = false
+
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
+         isPlaying = true
+         break
+      end
+   end
+   if not isPlaying then return end
+
+   local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
+   local heightOffset = animData.highTp and 50 or 1
+
+   -- Move player to the platform
+   rootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, heightOffset, 0))
+
+   -- Wait for the duration of the animation before teleporting back
+   task.wait(animData.returnTime)
+
+   -- Ensure animation is still playing before teleporting back
+   isPlaying = false
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
+         isPlaying = true
+         break
+      end
+   end
+
+   if isPlaying then
+      rootPart.CFrame = originalCFrame
+   end
 end
 
--- Handle dropdown for Anti Death Counter
-local AntiUltimates_OneShotMovesDropdown = MainTab:CreateDropdown({
-   Name = "Anti (Ultimate/1 Shot Moves)",
-   Options = {"Anti Death Counter", "Anti Tableflip", "Anti Serious Punch", "Anti Omni Directional Kick", "Anti Incinerate", "Anti Death Blow"},
-   CurrentOption = nil,
-   MultipleOptions = false,
-   Flag = "AntiUltimates_OneShotMovesDropdown1",
-   Callback = function(Options)
-       if Options and Options[1] == "Anti Death Counter" then
-           getgenv().AntiDeathCounterActive = true
-       else
-           getgenv().AntiDeathCounterActive = false
-       end
+local function detectAnimation()
+   local animator = getAnimator()
+   if not animator then return end
+
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      for name, data in pairs(animations) do
+         if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. data.id then
+            coroutine.wrap(handleAnimation)(name, data)
+         end
+      end
+   end
+end
+
+RunService.Heartbeat:Connect(detectAnimation)
+
+-- Ensure void bring logic persists after respawn
+localPlayer.CharacterAdded:Connect(function()
+   task.wait(1)
+   RunService.Heartbeat:Connect(detectAnimation)
+end)
+
+-- Creating toggles for each move
+for name, _ in pairs(animations) do
+   createToggle(name)
+end
+
+local ExploitsTabDivider1 = Exploits_Tab:CreateDivider()
+
+local AntiMovesSection = Exploits_Tab:CreateSection("Anti Moves")
+
+getgenv().AntiDeathCounterEnabled = false
+getgenv().IsCurrentlyAvoidingDeathCounter = false -- Prevents retriggering
+
+local AntiDeathCounterToggle = Exploits_Tab:CreateToggle({
+   Name = "Anti Death Counter",
+   CurrentValue = false,
+   Flag = "AntiDeathCounterToggle1",
+   Callback = function(Value)
+      getgenv().AntiDeathCounterEnabled = Value
+      print("[Anti Death Counter] Toggle set to:", Value)
    end,
 })
 
--- UI Elements
-local TeleportTab = Window:CreateTab("Teleport", "navigation")
+local function createPlatform(x, z)
+   local platform = Instance.new("Part")
+   platform.Size = Vector3.new(10, 1, 10)
+   platform.Position = Vector3.new(x, -498, z)
+   platform.Anchored = true
+   platform.Transparency = 1
+   platform.CanCollide = true
+   platform.Parent = workspace
+   return platform
+end
 
-local MapTeleportSection = TeleportTab:CreateSection("Map Teleport")
+local function deleteDeathGUIs()
+   local player = game:GetService("Players").LocalPlayer
 
--- Stores selected map location
-local SelectedMapLocation = nil
+   -- Check PlayerGui
+   if player:FindFirstChild("PlayerGui") then
+      for _, gui in pairs(player.PlayerGui:GetChildren()) do
+         if gui:IsA("ScreenGui") and gui.Name == "Death" then
+            gui:Destroy()
+         end
+      end
+   end
 
-local SelectMapTeleportDropdown = TeleportTab:CreateDropdown({
-   Name = "Teleport Map",
-   Options = {
-       "Arena Center", "Mountain 1", "Mountain 2",
-       "Void Platform (Only You Can See And Stand On)", "Sky Platform (Only You Can See And Stand On)",
-       "Death Counter Room (Inside)", "Death Counter Room (Outside)",
-       "Atomic Slash Room (Inside)", "Atomic Slash Room (Outside)",
-       "Blank Plate"
-   },
-   CurrentOption = nil,
-   MultipleOptions = false,
-   Flag = "SelectMapTeleportDropdown1",
-   Callback = function(OptionTable)
-       if OptionTable and OptionTable[1] then
-           SelectedMapLocation = OptionTable[1]
-       else
-           SelectedMapLocation = nil
-       end
-   end,
-})
+   -- Check StarterGui
+   local starterGui = game:GetService("StarterGui")
+   for _, gui in pairs(starterGui:GetChildren()) do
+      if gui:IsA("ScreenGui") and gui.Name == "Death" then
+         gui:Destroy()
+      end
+   end
+end
 
-local ActivateMapTeleportButton = TeleportTab:CreateButton({
-   Name = "Teleport to selected map location",
-   Callback = function()
-       if not SelectedMapLocation then return end
+local function stopAnimation(animator)
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      if track.Animation and track.Animation.AnimationId == "rbxassetid://11343250001" then
+         track:Stop() -- Stop the animation immediately
+      end
+   end
+end
 
-       local TeleportLocations = {
-           ["Arena Center"] = Vector3.new(157, 441, 23),
-           ["Mountain 1"] = Vector3.new(275, 699, 395),
-           ["Mountain 2"] = Vector3.new(1, 653, -344),
-           ["Void Platform (Only You Can See And Stand On)"] = Vector3.new(0, -494, 0),
-           ["Sky Platform (Only You Can See And Stand On)"] = Vector3.new(-971971, 10001, 971971),
-           ["Death Counter Room (Inside)"] = Vector3.new(-64, 43, 20334),
-           ["Death Counter Room (Outside)"] = Vector3.new(-75, 84, 20351),
-           ["Atomic Slash Room (Inside)"] = Vector3.new(1058, 133, 23007),
-           ["Atomic Slash Room (Outside)"] = Vector3.new(1058, 180, 23007),
-           ["Blank Plate"] = Vector3.new(1058, 406, 23007)
-       }
+local function handleAntiDeathCounter()
+   if not getgenv().AntiDeathCounterEnabled or getgenv().IsCurrentlyAvoidingDeathCounter then return end
+   getgenv().IsCurrentlyAvoidingDeathCounter = true -- Prevent retriggering
 
-       local TeleportPosition = TeleportLocations[SelectedMapLocation]
+   local player = game:GetService("Players").LocalPlayer
+   local character = player.Character or player.CharacterAdded:Wait()
+   local rootPart = character:FindFirstChild("HumanoidRootPart")
+   local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+   local animator = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
 
-       if TeleportPosition and game.Players.LocalPlayer.Character then
-           local Character = game.Players.LocalPlayer.Character
-           local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+   if not rootPart or not animator then 
+      getgenv().IsCurrentlyAvoidingDeathCounter = false
+      return 
+   end
 
-           if HumanoidRootPart then
-               HumanoidRootPart.CFrame = CFrame.new(TeleportPosition)
-           end
-       end
-   end,
-})
+   -- Stop the animation
+   stopAnimation(animator)
 
-local PlayersAndMapTeleportsDivider = TeleportTab:CreateDivider()
+   -- Save original position
+   local originalCFrame = rootPart.CFrame
 
-local PlayerTeleportSection = TeleportTab:CreateSection("Players Teleport")
+   -- Create platform and teleport above it
+   local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
+   rootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, 1, 0))
 
--- Load the teleport functionality
-loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Teleport%20Player%20Functionality"))() -- Replace with your actual URL
+   -- Continuously delete Death GUIs while waiting
+   local startTime = tick()
+   while tick() - startTime < 3 do
+      deleteDeathGUIs()
+      task.wait(0.1)
+   end
 
--- Create dropdown for teleportation (STARTS EMPTY)
-getgenv().SelectTeleportPlayerDropdown = TeleportTab:CreateDropdown({
-   Name = "Teleport To Player",
-   Options = {}, -- Empty at start
-   CurrentOption = nil,
-   MultipleOptions = false,
-   Flag = "TeleportPlayerDropdown1",
-   Callback = function(OptionTable)
-       -- Only update selected player if manually chosen
-       if OptionTable and OptionTable[1] then
-           getgenv().SelectedPlayer = OptionTable[1]
-       else
-           getgenv().SelectedPlayer = nil
-       end
-   end,
-})
+   -- Teleport back
+   rootPart.CFrame = originalCFrame
 
--- Create teleport button
-local ActivateTeleportPlayerButton = TeleportTab:CreateButton({
-   Name = "Teleport to selected player",
-   Callback = function()
-       getgenv().TeleportToSelectedPlayer()
-   end,
-})
+   -- Small delay before allowing retriggering
+   task.wait(1)
+   getgenv().IsCurrentlyAvoidingDeathCounter = false
+end
 
--- Create button to manually refresh the dropdown
-local RefreshTeleportDropdownButton = TeleportTab:CreateButton({
-   Name = "Refresh Player List",
-   Callback = function()
-       getgenv().RefreshTeleportDropdown()
-   end,
-})
+local function detectAntiDeathAnimation()
+   if getgenv().IsCurrentlyAvoidingDeathCounter then return end
+
+   local player = game:GetService("Players").LocalPlayer
+   local character = player.Character or player.CharacterAdded:Wait()
+   local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+   local animator = humanoid and humanoid:FindFirstChildWhichIsA("Animator")
+
+   if not animator then return end
+
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      if track.Animation and track.Animation.AnimationId == "rbxassetid://11343250001" then
+         stopAnimation(animator) -- Stop the animation immediately
+         coroutine.wrap(handleAntiDeathCounter)()
+      end
+   end
+end
+
+game:GetService("RunService").Heartbeat:Connect(detectAntiDeathAnimation)
