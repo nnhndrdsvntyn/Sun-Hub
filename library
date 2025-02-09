@@ -75,7 +75,7 @@ local function createButton(parent, text, callback)
     button.MouseButton1Click:Connect(callback)
 end
 
-local function createTabButton(tabFrame, text, callback)
+local function createTabButton(tabFrame, contentFrames, text, index)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, 0, 0, 30)
     button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -87,7 +87,11 @@ local function createTabButton(tabFrame, text, callback)
     uiCorner.CornerRadius = UDim.new(0, 5)
     uiCorner.Parent = button
     
-    button.MouseButton1Click:Connect(callback)
+    button.MouseButton1Click:Connect(function()
+        for i, frame in ipairs(contentFrames) do
+            frame.Visible = (i == index)
+        end
+    end)
 end
 
 -- API for users
