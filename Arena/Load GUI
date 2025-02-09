@@ -221,53 +221,6 @@ local AntiUltimates_OneShotMovesDropdown = MainTab:CreateDropdown({
    end,
 })
 
--- Remove specific children for 10 seconds
-local objectsToRemove = {
-    "NoBlock",
-    "NoJump",
-    "Freeze",
-    "ComboStun",
-    "UsedDash",
-    "M1ing",
-    "StopRunning",
-    "NoRotate",
-    "NoRotateUltimate"
-}
-
--- Function to remove the specified children
-local function removeSpecificChildren()
-    -- Get the player's character model
-    if player.Character and player.Character.Parent then
-        for _, child in pairs(player.Character:GetChildren()) do
-            -- Check if the child is in the list of objects to remove
-            for _, objectName in pairs(objectsToRemove) do
-                if child.Name == objectName then
-                    -- Remove the child
-                    child:Destroy()
-                    print("Removed:", child:GetFullName())
-                end
-            end
-        end
-    end
-end
-
--- Run the remove function every heartbeat for 10 seconds
-local heartbeatConnection
-local removeTime = 10  -- Time in seconds before stopping
-local startTime = tick()  -- Get the current time
-
-heartbeatConnection = RunService.Heartbeat:Connect(function()
-    -- Check if 10 seconds have passed
-    if tick() - startTime >= removeTime then
-        -- Stop the heartbeat function after 10 seconds
-        heartbeatConnection:Disconnect()
-        print("Stopped removing objects after 10 seconds.")
-    else
-        -- Continue removing objects every heartbeat
-        removeSpecificChildren()
-    end
-end)
-
 -- UI Elements
 local TeleportTab = Window:CreateTab("Teleport", "navigation")
 
