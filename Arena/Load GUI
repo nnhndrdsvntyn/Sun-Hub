@@ -69,7 +69,76 @@ end
 
 local ExploitsTabDivider1 = Exploits_Tab:CreateDivider()
 
-local AntiMovesSection = Exploits_Tab:CreateSection("Anti Moves")
+local AntiMovesSection = Exploits_Tab:CreateSection("Anti")
+
+-- Load Hide Player On Low HP Functionality
+loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Hide%20On%20Low%20HP%20Functionality"))()
+
+local HideHPSlider, ReturnHPSlider  -- Declare both sliders first
+
+--// UI ELEMENTS (Placed at the Bottom) \\--
+
+local HidePlayerOnLowHPToggle = Exploits_Tab:CreateToggle({
+    Name = "Hide Player On Low HP",
+    CurrentValue = getgenv().HidePlayerOnLowHP,
+    Flag = "HideOnLowHPToggle1",
+    Callback = function(Value)
+        getgenv().HidePlayerOnLowHP = Value
+        if not Value then
+            lowHealthLogged = false
+            if cameraPart then
+                rootPart.CFrame = CFrame.new(cameraPart.Position)
+            end
+            camera.CameraSubject = humanoid
+            if cameraPart then
+                cameraPart:Destroy()
+                cameraPart = nil
+            end
+            if platform then
+                platform:Destroy()
+                platform = nil
+            end
+        end
+    end,
+})
+
+HideHPSlider = Exploits_Tab:CreateSlider({
+    Name = "HP to Hide",
+    Range = {0, 100},
+    Increment = 1,
+    CurrentValue = getgenv().HideHPThreshold,
+    Flag = "HideHPSlider1",
+    Callback = function(Value)
+        getgenv().HideHPThreshold = Value
+        
+        -- Ensure HP to Return is always greater than HP to Hide
+        if getgenv().HideHPThreshold >= getgenv().ReturnHPThreshold then
+            getgenv().ReturnHPThreshold = getgenv().HideHPThreshold + 1
+            if ReturnHPSlider then
+                ReturnHPSlider:Set(getgenv().ReturnHPThreshold) -- Force update ReturnHP slider
+            end
+        end
+    end,
+})
+
+ReturnHPSlider = Exploits_Tab:CreateSlider({
+    Name = "HP to Return",
+    Range = {0, 100},
+    Increment = 1,
+    CurrentValue = getgenv().ReturnHPThreshold,
+    Flag = "ReturnHPSlider1",
+    Callback = function(Value)
+        getgenv().ReturnHPThreshold = Value
+        
+        -- Ensure HP to Hide is always less than HP to Return
+        if getgenv().ReturnHPThreshold <= getgenv().HideHPThreshold then
+            getgenv().HideHPThreshold = getgenv().ReturnHPThreshold - 1
+            if HideHPSlider then
+                HideHPSlider:Set(getgenv().HideHPThreshold) -- Force update HideHP slider
+            end
+        end
+    end,
+})
 
 local AntiDeathCounterToggle = Exploits_Tab:CreateToggle({
    Name = "Anti Death Counter",
@@ -80,3 +149,5 @@ local AntiDeathCounterToggle = Exploits_Tab:CreateToggle({
       print("[Anti Death Counter] Toggle set to:", Value)
    end,
 })
+
+local ExploitsTabDivider2 = Exploits_Tab:CreateDivider()
