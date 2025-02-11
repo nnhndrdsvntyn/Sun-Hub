@@ -1,7 +1,7 @@
 local function createPlatform(x, z)
    local platform = Instance.new("Part")
-   platform.Size = Vector3.new(10, 1, 10)
-   platform.Position = Vector3.new(x, -498, z)
+   platform.Size = Vector3.new(1, 1, 1)
+   platform.Position = Vector3.new(x, -499, z)
    platform.Anchored = true
    platform.Transparency = 1
    platform.CanCollide = true
@@ -65,7 +65,7 @@ local function handleAntiDeathCounter()
 
    -- Continuously delete Death GUIs while waiting
    local startTime = tick()
-   while tick() - startTime < 3 do
+   while tick() - startTime < 1 do
       deleteDeathGUIs()
       task.wait(0.1)
    end
