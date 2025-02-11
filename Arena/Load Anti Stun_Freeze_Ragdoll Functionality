@@ -1,0 +1,31 @@
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Store toggle state
+getgenv().AntiStunFreezeEnabled = getgenv().AntiStunFreezeEnabled or false
+
+local HeartbeatConnection
+
+local function StartDetection()
+    if HeartbeatConnection then return end -- Prevent multiple connections
+
+    HeartbeatConnection = RunService.Heartbeat:Connect(function()
+        local playerFolder = workspace.Live:FindFirstChild(LocalPlayer.Name)
+        if playerFolder then
+                for _, childName in pairs({"Freeze", "NoBlock", "NoJump", "ComboStun", "NoPunch", "NoDash", "StopRunning", "Slowed", "NoVel", "NoRotate", "BeingLaunched", "LaunchEnded", "RagdollSim", "Ragdoll", "UnragollReady","AntiMove"}) do
+                local child = playerFolder:FindFirstChild(childName)
+                if child then
+                    child:Destroy()
+                end
+            end
+        end
+    end)
+end
+
+local function StopDetection()
+    if HeartbeatConnection then
+        HeartbeatConnection:Disconnect()
+        HeartbeatConnection = nil
+    end
+end
