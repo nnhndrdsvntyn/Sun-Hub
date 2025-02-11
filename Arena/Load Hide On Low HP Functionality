@@ -45,48 +45,40 @@ RunService.Heartbeat:Connect(function()
             Duration = 3
         })
 
-        -- Create an invisible part at the original position (slightly above)
+        -- Ensure the platform exists BEFORE teleporting
+        if not platform or not platform.Parent then
+            platform = Instance.new("Part")
+            platform.Size = Vector3.new(10, 1, 10)
+            platform.Anchored = true
+            platform.Position = Vector3.new(10000, 9999, 10000) -- Just below player
+            platform.Parent = Workspace
+        else
+            platform.Position = Vector3.new(10000, 9999, 10000) -- Ensure position is correct
+        end
+
+        -- Ensure an invisible camera part exists
         if not cameraPart then
             cameraPart = Instance.new("Part")
             cameraPart.Size = Vector3.new(1, 1, 1)
             cameraPart.Transparency = 1
             cameraPart.Anchored = true
             cameraPart.CanCollide = false
-            cameraPart.Position = originalPosition.Position + Vector3.new(0, 3, 0)
+            cameraPart.Position = originalPosition.Position + Vector3.new(0, 3, 0) -- Slightly above original position
             cameraPart.Parent = Workspace
         end
 
         -- Set camera to look at the invisible part
         camera.CameraSubject = cameraPart
 
-        -- Teleport player far away
+        -- Force Safe State (prevents falling death)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+
+        -- Teleport player far away (on top of platform)
         rootPart.CFrame = CFrame.new(10000, 10000, 10000)
 
-        -- Reset velocity
-        rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-
-        -- Create platform if not exists
-        if not platform or not platform.Parent then
-            platform = Instance.new("Part")
-            platform.Size = Vector3.new(10, 1, 10)
-            platform.Anchored = true
-            platform.Position = Vector3.new(10000, 9999, 10000)
-            platform.Parent = Workspace
-        end
-
-        -- Remove "Ragdoll" and "RagdollSim" children
-        if playerFolder then
-            for _, child in pairs(playerFolder:GetChildren()) do
-                if child.Name == "Ragdoll" or child.Name == "RagdollSim" then
-                    child:Destroy()
-                end
-            end
-        end
-    end
-
-    -- If HP is back to normal, return to original position
-    if health >= getgenv().ReturnHPThreshold and lowHealthLogged then
+    elseif health >= getgenv().ReturnHPThreshold and lowHealthLogged then
         lowHealthLogged = false
 
         -- Notify Player (only once)
@@ -104,6 +96,11 @@ RunService.Heartbeat:Connect(function()
         -- Restore camera
         camera.CameraSubject = originalCameraSubject or humanoid
 
+        -- Re-enable falling states
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
+
         -- Delete the invisible part
         if cameraPart then
             cameraPart:Destroy()
@@ -114,6 +111,20 @@ RunService.Heartbeat:Connect(function()
         if platform then
             platform:Destroy()
             platform = nil
+        end
+    end
+
+    -- Ensure player stays at (10000, 10000, 10000) when low HP
+    if lowHealthLogged then
+        rootPart.CFrame = CFrame.new(10000, 10000, 10000)
+
+        -- Reset velocity every HeartBeat (so you don’t fall)
+        rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+
+        -- Ensure platform is below player (so you don’t get void killed)
+        if platform and platform.Parent then
+            platform.Position = Vector3.new(10000, 9999, 10000)
         end
     end
 end)
