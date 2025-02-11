@@ -1,13 +1,14 @@
---// FUNCTIONALITY (Placed at the Top) \\--
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
+local humanoid
+local rootPart
+local camera = Workspace.CurrentCamera
+local character
 
--- Global Variables
 local lowHealthLogged = false
 local originalPosition = nil
 local originalCameraSubject = nil
@@ -19,25 +20,42 @@ getgenv().HidePlayerOnLowHP = getgenv().HidePlayerOnLowHP or false
 getgenv().HideHPThreshold = getgenv().HideHPThreshold or 25
 getgenv().ReturnHPThreshold = getgenv().ReturnHPThreshold or 35
 
-local function setupCharacter(character)
-    local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
-    local rootPart = character:WaitForChild("HumanoidRootPart")
-    local camera = Workspace.CurrentCamera
-
+local function resetStates()
     lowHealthLogged = false
     originalPosition = nil
     originalCameraSubject = nil
-    cameraPart = nil
-    platform = nil
+    if cameraPart then
+        cameraPart:Destroy()
+        cameraPart = nil
+    end
+    if platform then
+        platform:Destroy()
+        platform = nil
+    end
+end
 
-    RunService.Heartbeat:Connect(function()
+local function setupCharacter(newCharacter)
+    character = newCharacter
+    humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
+    rootPart = character:WaitForChild("HumanoidRootPart")
+
+    -- Reset everything on respawn
+    resetStates()
+
+    -- Reconnect Heartbeat
+    local heartbeatConnection
+    heartbeatConnection = RunService.Heartbeat:Connect(function()
         if not getgenv().HidePlayerOnLowHP then
+            return
+        end
+
+        if not humanoid or not rootPart then
+            heartbeatConnection:Disconnect()
             return
         end
 
         local health = math.floor(humanoid.Health + 0.5) -- Round HP to whole number
 
-        -- If player reaches low HP, teleport them
         if health <= getgenv().HideHPThreshold and not lowHealthLogged then
             lowHealthLogged = true
 
@@ -53,14 +71,12 @@ local function setupCharacter(character)
             })
 
             -- Ensure the platform exists BEFORE teleporting
-            if not platform or not platform.Parent then
+            if not platform then
                 platform = Instance.new("Part")
                 platform.Size = Vector3.new(10, 1, 10)
                 platform.Anchored = true
                 platform.Position = Vector3.new(10000, 9999, 10000) -- Just below player
                 platform.Parent = Workspace
-            else
-                platform.Position = Vector3.new(10000, 9999, 10000) -- Ensure position is correct
             end
 
             -- Ensure an invisible camera part exists
