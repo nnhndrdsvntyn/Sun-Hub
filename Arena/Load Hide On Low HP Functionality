@@ -1,0 +1,117 @@
+--// FUNCTIONALITY (Placed at the Top) \\--
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local camera = Workspace.CurrentCamera
+
+local lowHealthLogged = false
+local originalPosition = nil
+local cameraPart = nil
+local platform = nil
+local playerFolder = Workspace:WaitForChild("Live"):FindFirstChild(player.Name)
+
+-- Initialize Global States
+getgenv().HidePlayerOnLowHP = getgenv().HidePlayerOnLowHP or false
+getgenv().HideHPThreshold = getgenv().HideHPThreshold or 25
+getgenv().ReturnHPThreshold = getgenv().ReturnHPThreshold or 35
+
+RunService.Heartbeat:Connect(function()
+    if not getgenv().HidePlayerOnLowHP then
+        return
+    end
+
+    local health = math.floor(humanoid.Health + 0.5) -- Round HP to whole number
+
+    if health <= getgenv().HideHPThreshold and not lowHealthLogged then
+        lowHealthLogged = true
+
+        -- Notify Player (only once)
+        StarterGui:SetCore("SendNotification", {
+            Title = "🚨 Low HP 🚨",
+            Text = "Your HP is at " .. health .. " or lower!\nTeleporting to a safe place...",
+            Duration = 3
+        })
+
+        -- Store original position
+        originalPosition = rootPart.CFrame
+
+        -- Create an invisible camera part
+        if not cameraPart then
+            cameraPart = Instance.new("Part")
+            cameraPart.Size = Vector3.new(1, 1, 1)
+            cameraPart.Transparency = 1
+            cameraPart.Anchored = true
+            cameraPart.CanCollide = false
+            cameraPart.Position = originalPosition.Position
+            cameraPart.Parent = Workspace
+        end
+
+        -- Set camera to look at the invisible part
+        camera.CameraType = Enum.CameraType.Custom
+        camera.CameraSubject = cameraPart
+
+    elseif health >= getgenv().ReturnHPThreshold and lowHealthLogged then
+        lowHealthLogged = false
+
+        -- Notify Player (only once)
+        StarterGui:SetCore("SendNotification", {
+            Title = "🟢 Decent HP 🟢",
+            Text = "Your HP is at " .. health .. " or higher.\nTeleported back to original location.",
+            Duration = 3
+        })
+
+        -- Restore player to the invisible part's position (prevents floating)
+        if cameraPart then
+            rootPart.CFrame = CFrame.new(cameraPart.Position)
+        end
+
+        -- Restore camera to normal
+        camera.CameraSubject = humanoid
+
+        -- Delete the invisible part
+        if cameraPart then
+            cameraPart:Destroy()
+            cameraPart = nil
+        end
+
+        -- Remove the platform
+        if platform then
+            platform:Destroy()
+            platform = nil
+        end
+    end
+
+    -- Continuously teleport to (10000, 10000, 10000) if health is low
+    if lowHealthLogged then
+        rootPart.CFrame = CFrame.new(10000, 10000, 10000)
+
+        -- Reset velocity
+        rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+
+        -- Create the platform if it doesn't exist
+        if not platform or not platform.Parent then
+            platform = Instance.new("Part")
+            platform.Size = Vector3.new(10, 1, 10)
+            platform.Anchored = true
+            platform.Position = Vector3.new(10000, 9999, 10000)
+            platform.Parent = Workspace
+        end
+
+        -- Remove "Ragdoll" and "RagdollSim" children
+        if playerFolder then
+            for _, child in pairs(playerFolder:GetChildren()) do
+                if child.Name == "Ragdoll" or child.Name == "RagdollSim" then
+                    child:Destroy()
+                end
+            end
+        end
+    end
+end)
