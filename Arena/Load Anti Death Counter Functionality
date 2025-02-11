@@ -12,6 +12,7 @@ end
 local function deleteDeathGUIs()
    local player = game:GetService("Players").LocalPlayer
 
+   -- Check PlayerGui
    if player:FindFirstChild("PlayerGui") then
       for _, gui in pairs(player.PlayerGui:GetChildren()) do
          if gui:IsA("ScreenGui") and gui.Name == "Death" then
@@ -20,6 +21,7 @@ local function deleteDeathGUIs()
       end
    end
 
+   -- Check StarterGui
    local starterGui = game:GetService("StarterGui")
    for _, gui in pairs(starterGui:GetChildren()) do
       if gui:IsA("ScreenGui") and gui.Name == "Death" then
@@ -31,29 +33,14 @@ end
 local function stopAnimation(animator)
    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
       if track.Animation and track.Animation.AnimationId == "rbxassetid://11343250001" then
-         track:Stop()
-      end
-   end
-end
-
-local function deleteUnwantedChildren()
-   local player = game:GetService("Players").LocalPlayer
-   local liveFolder = workspace:FindFirstChild("Live")
-   if liveFolder and player then
-      local playerFolder = liveFolder:FindFirstChild(player.Name)
-      if playerFolder then
-         for _, child in pairs(playerFolder:GetChildren()) do
-            if child:IsA("Instance") and (child.Name == "Freeze" or child.Name == "NoRotate" or child.Name == "NoRotateUltimate") then
-               child:Destroy()
-            end
-         end
+         track:Stop() -- Stop the animation immediately
       end
    end
 end
 
 local function handleAntiDeathCounter()
    if not getgenv().AntiDeathCounterEnabled or getgenv().IsCurrentlyAvoidingDeathCounter then return end
-   getgenv().IsCurrentlyAvoidingDeathCounter = true
+   getgenv().IsCurrentlyAvoidingDeathCounter = true -- Prevent retriggering
 
    local player = game:GetService("Players").LocalPlayer
    local character = player.Character or player.CharacterAdded:Wait()
@@ -66,19 +53,27 @@ local function handleAntiDeathCounter()
       return 
    end
 
+   -- Stop the animation
    stopAnimation(animator)
+
+   -- Save original position
    local originalCFrame = rootPart.CFrame
+
+   -- Create platform and teleport above it
    local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
    rootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, 1, 0))
 
+   -- Continuously delete Death GUIs while waiting
    local startTime = tick()
    while tick() - startTime < 3 do
       deleteDeathGUIs()
       task.wait(0.1)
    end
 
-   deleteUnwantedChildren()
+   -- Teleport back
    rootPart.CFrame = originalCFrame
+
+   -- Small delay before allowing retriggering
    task.wait(1)
    getgenv().IsCurrentlyAvoidingDeathCounter = false
 end
@@ -95,7 +90,7 @@ local function detectAntiDeathAnimation()
 
    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
       if track.Animation and track.Animation.AnimationId == "rbxassetid://11343250001" then
-         stopAnimation(animator)
+         stopAnimation(animator) -- Stop the animation immediately
          coroutine.wrap(handleAntiDeathCounter)()
       end
    end
