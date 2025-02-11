@@ -143,7 +143,7 @@ ReturnHPSlider = Exploits_Tab:CreateSlider({
 -- Load Anti Stun/Freeze/Ragdoll Functionality
 loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Anti%20Stun_Freeze_Ragdoll%20Functionality"))()
 
-local AntiStunFreezeToggle = AntiMovesSection:CreateToggle({
+local AntiStunFreezeToggle = Exploits_Tab:CreateToggle({
     Name = "Anti Stun/Freeze/Ragdoll",
     CurrentValue = getgenv().AntiStunFreezeEnabled,
     Flag = "AntiStunFreezeToggle",
