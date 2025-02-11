@@ -6,125 +6,144 @@ local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
-local camera = Workspace.CurrentCamera
 
+-- Global Variables
 local lowHealthLogged = false
 local originalPosition = nil
 local originalCameraSubject = nil
 local cameraPart = nil
 local platform = nil
-local playerFolder = Workspace:WaitForChild("Live"):FindFirstChild(player.Name)
 
 -- Initialize Global States
 getgenv().HidePlayerOnLowHP = getgenv().HidePlayerOnLowHP or false
 getgenv().HideHPThreshold = getgenv().HideHPThreshold or 25
 getgenv().ReturnHPThreshold = getgenv().ReturnHPThreshold or 35
 
-RunService.Heartbeat:Connect(function()
-    if not getgenv().HidePlayerOnLowHP then
-        return
-    end
+local function setupCharacter(character)
+    local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+    local camera = Workspace.CurrentCamera
 
-    local health = math.floor(humanoid.Health + 0.5) -- Round HP to whole number
+    lowHealthLogged = false
+    originalPosition = nil
+    originalCameraSubject = nil
+    cameraPart = nil
+    platform = nil
 
-    -- If player reaches low HP, teleport them
-    if health <= getgenv().HideHPThreshold and not lowHealthLogged then
-        lowHealthLogged = true
-
-        -- Store original position and camera subject
-        originalPosition = rootPart.CFrame
-        originalCameraSubject = camera.CameraSubject
-
-        -- Notify Player (only once)
-        StarterGui:SetCore("SendNotification", {
-            Title = "🚨 Low HP 🚨",
-            Text = "Your HP is at " .. health .. " or lower!\nTeleporting to a safe place...",
-            Duration = 3
-        })
-
-        -- Ensure the platform exists BEFORE teleporting
-        if not platform or not platform.Parent then
-            platform = Instance.new("Part")
-            platform.Size = Vector3.new(10, 1, 10)
-            platform.Anchored = true
-            platform.Position = Vector3.new(10000, 9999, 10000) -- Just below player
-            platform.Parent = Workspace
-        else
-            platform.Position = Vector3.new(10000, 9999, 10000) -- Ensure position is correct
+    RunService.Heartbeat:Connect(function()
+        if not getgenv().HidePlayerOnLowHP then
+            return
         end
 
-        -- Ensure an invisible camera part exists
-        if not cameraPart then
-            cameraPart = Instance.new("Part")
-            cameraPart.Size = Vector3.new(1, 1, 1)
-            cameraPart.Transparency = 1
-            cameraPart.Anchored = true
-            cameraPart.CanCollide = false
-            cameraPart.Position = originalPosition.Position + Vector3.new(0, 3, 0) -- Slightly above original position
-            cameraPart.Parent = Workspace
+        local health = math.floor(humanoid.Health + 0.5) -- Round HP to whole number
+
+        -- If player reaches low HP, teleport them
+        if health <= getgenv().HideHPThreshold and not lowHealthLogged then
+            lowHealthLogged = true
+
+            -- Store original position and camera subject
+            originalPosition = rootPart.CFrame
+            originalCameraSubject = camera.CameraSubject
+
+            -- Notify Player (only once)
+            StarterGui:SetCore("SendNotification", {
+                Title = "🚨 Low HP 🚨",
+                Text = "Your HP is at " .. health .. " or lower!\nTeleporting to a safe place...",
+                Duration = 3
+            })
+
+            -- Ensure the platform exists BEFORE teleporting
+            if not platform or not platform.Parent then
+                platform = Instance.new("Part")
+                platform.Size = Vector3.new(10, 1, 10)
+                platform.Anchored = true
+                platform.Position = Vector3.new(10000, 9999, 10000) -- Just below player
+                platform.Parent = Workspace
+            else
+                platform.Position = Vector3.new(10000, 9999, 10000) -- Ensure position is correct
+            end
+
+            -- Ensure an invisible camera part exists
+            if not cameraPart then
+                cameraPart = Instance.new("Part")
+                cameraPart.Size = Vector3.new(1, 1, 1)
+                cameraPart.Transparency = 1
+                cameraPart.Anchored = true
+                cameraPart.CanCollide = false
+                cameraPart.Position = originalPosition.Position + Vector3.new(0, 3, 0) -- Slightly above original position
+                cameraPart.Parent = Workspace
+            end
+
+            -- Set camera to look at the invisible part
+            camera.CameraSubject = cameraPart
+
+            -- Force Safe State (prevents falling death)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+
+            -- Teleport player far away (on top of platform)
+            rootPart.CFrame = CFrame.new(10000, 10000, 10000)
+
+        elseif health >= getgenv().ReturnHPThreshold and lowHealthLogged then
+            lowHealthLogged = false
+
+            -- Notify Player (only once)
+            StarterGui:SetCore("SendNotification", {
+                Title = "🟢 Decent HP 🟢",
+                Text = "Your HP is at " .. health .. " or higher.\nReturning to original location.",
+                Duration = 3
+            })
+
+            -- Teleport player back to original position
+            if originalPosition then
+                rootPart.CFrame = originalPosition
+            end
+
+            -- Restore camera
+            camera.CameraSubject = originalCameraSubject or humanoid
+
+            -- Re-enable falling states
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
+
+            -- Delete the invisible part
+            if cameraPart then
+                cameraPart:Destroy()
+                cameraPart = nil
+            end
+
+            -- Remove the platform
+            if platform then
+                platform:Destroy()
+                platform = nil
+            end
         end
 
-        -- Set camera to look at the invisible part
-        camera.CameraSubject = cameraPart
+        -- Ensure player stays at (10000, 10000, 10000) when low HP
+        if lowHealthLogged then
+            rootPart.CFrame = CFrame.new(10000, 10000, 10000)
 
-        -- Force Safe State (prevents falling death)
-        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-        humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+            -- Reset velocity every HeartBeat (so you don’t fall)
+            rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 
-        -- Teleport player far away (on top of platform)
-        rootPart.CFrame = CFrame.new(10000, 10000, 10000)
-
-    elseif health >= getgenv().ReturnHPThreshold and lowHealthLogged then
-        lowHealthLogged = false
-
-        -- Notify Player (only once)
-        StarterGui:SetCore("SendNotification", {
-            Title = "🟢 Decent HP 🟢",
-            Text = "Your HP is at " .. health .. " or higher.\nReturning to original location.",
-            Duration = 3
-        })
-
-        -- Teleport player back to original position
-        if originalPosition then
-            rootPart.CFrame = originalPosition
+            -- Ensure platform is below player (so you don’t get void killed)
+            if platform and platform.Parent then
+                platform.Position = Vector3.new(10000, 9999, 10000)
+            end
         end
+    end)
+end
 
-        -- Restore camera
-        camera.CameraSubject = originalCameraSubject or humanoid
+-- Listen for character respawns
+player.CharacterAdded:Connect(setupCharacter)
 
-        -- Re-enable falling states
-        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
-        humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
-
-        -- Delete the invisible part
-        if cameraPart then
-            cameraPart:Destroy()
-            cameraPart = nil
-        end
-
-        -- Remove the platform
-        if platform then
-            platform:Destroy()
-            platform = nil
-        end
-    end
-
-    -- Ensure player stays at (10000, 10000, 10000) when low HP
-    if lowHealthLogged then
-        rootPart.CFrame = CFrame.new(10000, 10000, 10000)
-
-        -- Reset velocity every HeartBeat (so you don’t fall)
-        rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-
-        -- Ensure platform is below player (so you don’t get void killed)
-        if platform and platform.Parent then
-            platform.Position = Vector3.new(10000, 9999, 10000)
-        end
-    end
-end)
+-- Initial setup for the first time
+if player.Character then
+    setupCharacter(player.Character)
+else
+    player.CharacterAdded:Wait()
+    setupCharacter(player.Character)
+end
