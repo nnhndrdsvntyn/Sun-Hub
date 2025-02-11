@@ -15,7 +15,7 @@ end
 
 displayMessage("Loaded Sun Hub, For TSB.")
 
-local function displayEmptyMessage(message)
+local function displaySubtitleMessage(message)
     local Players = game:GetService("Players")
     local StarterGui = game:GetService("StarterGui")
     local LocalPlayer = Players.LocalPlayer
@@ -32,3 +32,11 @@ end
 
 local Version = "BETA"
 displaySubtitleMessage("Version: " .. Version)
+
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCore("SendNotification", {
+    Title = "Sun Hub",
+    Text = "Game: The Strongest Battle Grounds\nMade By NNHN\nLoading... ✅", 
+    Button1 = "OK.",
+    Duration = 9999999999999999999999999999999999999999999999999999999999999, -- duration of the notification in seconds
+})
