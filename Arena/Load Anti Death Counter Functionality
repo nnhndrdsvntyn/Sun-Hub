@@ -96,4 +96,36 @@ local function detectAntiDeathAnimation()
    end
 end
 
+local function deleteUnwantedChildren()
+   local player = game:GetService("Players").LocalPlayer
+   local livePath = workspace:FindFirstChild("Live")
+
+   if not livePath then return end
+
+   local playerModel = livePath:FindFirstChild(player.Name)
+   if not playerModel then return end
+
+   local lastDetectionTime = tick()
+
+   while true do
+      local detected = false
+
+      for _, child in ipairs(playerModel:GetChildren()) do
+         if child:IsA("Instance") and (child.Name == "Freeze" or child.Name == "NoRotate" or child.Name == "NoRotateUltimate") then
+            child:Destroy()
+            detected = true
+         end
+      end
+
+      if detected then
+         lastDetectionTime = tick() -- Reset timer if detected
+      elseif tick() - lastDetectionTime > 0.25 then
+         break -- Stop once nothing has spawned for 0.25s
+      end
+
+      task.wait(0.05) -- Check every 0.05s for better responsiveness
+   end
+end
+
 game:GetService("RunService").Heartbeat:Connect(detectAntiDeathAnimation)
+game:GetService("RunService").Heartbeat:Connect(deleteUnwantedChildren)
