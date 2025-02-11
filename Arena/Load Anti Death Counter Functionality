@@ -12,7 +12,6 @@ end
 local function deleteDeathGUIs()
    local player = game:GetService("Players").LocalPlayer
 
-   -- Check PlayerGui
    if player:FindFirstChild("PlayerGui") then
       for _, gui in pairs(player.PlayerGui:GetChildren()) do
          if gui:IsA("ScreenGui") and gui.Name == "Death" then
@@ -21,7 +20,6 @@ local function deleteDeathGUIs()
       end
    end
 
-   -- Check StarterGui
    local starterGui = game:GetService("StarterGui")
    for _, gui in pairs(starterGui:GetChildren()) do
       if gui:IsA("ScreenGui") and gui.Name == "Death" then
@@ -33,14 +31,29 @@ end
 local function stopAnimation(animator)
    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
       if track.Animation and track.Animation.AnimationId == "rbxassetid://11343250001" then
-         track:Stop() -- Stop the animation immediately
+         track:Stop()
+      end
+   end
+end
+
+local function deleteUnwantedChildren()
+   local player = game:GetService("Players").LocalPlayer
+   local liveFolder = workspace:FindFirstChild("Live")
+   if liveFolder and player then
+      local playerFolder = liveFolder:FindFirstChild(player.Name)
+      if playerFolder then
+         for _, child in pairs(playerFolder:GetChildren()) do
+            if child:IsA("Instance") and (child.Name == "Freeze" or child.Name == "NoRotate" or child.Name == "NoRotateUltimate") then
+               child:Destroy()
+            end
+         end
       end
    end
 end
 
 local function handleAntiDeathCounter()
    if not getgenv().AntiDeathCounterEnabled or getgenv().IsCurrentlyAvoidingDeathCounter then return end
-   getgenv().IsCurrentlyAvoidingDeathCounter = true -- Prevent retriggering
+   getgenv().IsCurrentlyAvoidingDeathCounter = true
 
    local player = game:GetService("Players").LocalPlayer
    local character = player.Character or player.CharacterAdded:Wait()
@@ -53,33 +66,19 @@ local function handleAntiDeathCounter()
       return 
    end
 
-   -- Stop the animation
    stopAnimation(animator)
-
-   -- Save original position
    local originalCFrame = rootPart.CFrame
-
-   -- Create platform and teleport above it
    local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
    rootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, 1, 0))
 
-   -- Start deleting unwanted children while waiting
-   deleteUnwantedChildren(true) -- Start loop
-
-   -- Continuously delete Death GUIs while waiting
    local startTime = tick()
    while tick() - startTime < 3 do
       deleteDeathGUIs()
       task.wait(0.1)
    end
 
-   -- Teleport back
+   deleteUnwantedChildren()
    rootPart.CFrame = originalCFrame
-
-   -- Stop deleting unwanted children
-   deleteUnwantedChildren(false) -- Stop loop
-
-   -- Small delay before allowing retriggering
    task.wait(1)
    getgenv().IsCurrentlyAvoidingDeathCounter = false
 end
@@ -96,49 +95,9 @@ local function detectAntiDeathAnimation()
 
    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
       if track.Animation and track.Animation.AnimationId == "rbxassetid://11343250001" then
-         stopAnimation(animator) -- Stop the animation immediately
+         stopAnimation(animator)
          coroutine.wrap(handleAntiDeathCounter)()
       end
-   end
-end
-
-local deletingLoopRunning = false
-
-local function deleteUnwantedChildren(start)
-   local player = game:GetService("Players").LocalPlayer
-   local livePath = workspace:FindFirstChild("Live")
-
-   if not livePath then return end
-   local playerModel = livePath:FindFirstChild(player.Name)
-   if not playerModel then return end
-
-   if start then
-      if deletingLoopRunning then return end -- Prevent multiple loops
-      deletingLoopRunning = true
-   else
-      deletingLoopRunning = false
-      return
-   end
-
-   local lastDetectionTime = tick()
-
-   while deletingLoopRunning do
-      local detected = false
-
-      for _, child in ipairs(playerModel:GetChildren()) do
-         if child:IsA("Instance") and (child.Name == "Freeze" or child.Name == "NoRotate" or child.Name == "NoRotateUltimate") then
-            child:Destroy()
-            detected = true
-         end
-      end
-
-      if detected then
-         lastDetectionTime = tick() -- Reset timer if detected
-      elseif tick() - lastDetectionTime > 0.25 then
-         deletingLoopRunning = false -- Stop once nothing has spawned for 0.25s
-      end
-
-      task.wait(0.05) -- Check every 0.05s for better responsiveness
    end
 end
 
