@@ -1,0 +1,155 @@
+-- Animation Teleportation System
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local localPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+local function getCharacter()
+   return localPlayer.Character or localPlayer.CharacterAdded:Wait()
+end
+
+local function getAnimator()
+   local character = getCharacter()
+   local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+   return humanoid and humanoid:FindFirstChildWhichIsA("Animator")
+end
+
+local animations = {
+   ["Flowing Water"] = {id = 12273188754, startDelay = 0},
+   ["Lethal Whirlwind Stream"] = {id = 12296113986, startDelay = 0},
+   ["Foul Ball"] = {id = 14705929107, startDelay = 0},
+   ["Atmos Cleave"] = {id = 15145462680, startDelay = 0.5},
+   ["Pinpoint Cut"] = {id = 15295895753, startDelay = 0.9},
+   ["Crushing Pull"] = {id = 16139108718, startDelay = 0},
+   ["Bullet Barrage"] = {id = 17799224866, startDelay = 2},
+   ["Head First"] = {id = 18182425133, startDelay = 0.75, highTp = true}
+}
+
+local originalCFrame = nil
+local activeAnimations = {}
+local platformCFrame = nil
+
+local function createPlatform(x, z)
+   local platform = Instance.new("Part")
+   platform.Size = Vector3.new(10, 1, 10)
+   platform.Position = Vector3.new(x, -498, z)
+   platform.Anchored = true
+   platform.Transparency = 1
+   platform.CanCollide = true
+   platform.Parent = workspace
+   return platform
+end
+
+local function resetVelocity(character)
+   for _, part in ipairs(character:GetChildren()) do
+      if part:IsA("BasePart") then
+         part.Velocity = Vector3.new(0, 0, 0)
+         part.RotVelocity = Vector3.new(0, 0, 0)
+      end
+   end
+end
+
+local function handleAnimation(animName, animData)
+   if not getgenv().VoidBringMoves[animName] then return end
+
+   -- Debounce check
+   if activeAnimations[animName] then return end
+   activeAnimations[animName] = true
+
+   local character = getCharacter()
+   local rootPart = character:FindFirstChild("HumanoidRootPart")
+   if not rootPart then
+      activeAnimations[animName] = nil
+      return
+   end
+
+   -- Save original position if not already saved
+   if not originalCFrame then
+      originalCFrame = rootPart.CFrame
+   end
+
+   task.wait(animData.startDelay)
+
+   local animator = getAnimator()
+   local isPlaying = false
+
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
+         isPlaying = true
+         break
+      end
+   end
+   if not isPlaying then
+      activeAnimations[animName] = nil
+      return
+   end
+
+   local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
+   platformCFrame = CFrame.new(platform.Position + Vector3.new(0, animData.highTp and 50 or 1, 0))
+
+   -- Set camera to Scriptable
+   Camera.CameraType = Enum.CameraType.Scriptable
+
+   -- Teleport player to the platform every heartbeat until the animation stops
+   local teleportConnection
+   teleportConnection = RunService.Heartbeat:Connect(function()
+      rootPart.CFrame = platformCFrame
+      resetVelocity(character)
+   end)
+
+   -- Wait until the animation stops playing
+   while true do
+      local isPlaying = false
+      for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+         if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
+            isPlaying = true
+            break
+         end
+      end
+      if not isPlaying then
+         print("Animation stopped playing: " .. animName)
+         break
+      end
+      task.wait()
+   end
+
+   -- Always teleport back to the original position
+   rootPart.CFrame = originalCFrame
+   resetVelocity(character)
+
+   -- Set camera to Custom
+   Camera.CameraType = Enum.CameraType.Custom
+
+   -- Clear the saved position and debounce
+   originalCFrame = nil
+   activeAnimations[animName] = nil
+   teleportConnection:Disconnect()
+
+   -- Reset velocity for 0.01 seconds after teleporting back
+   task.delay(0.01, function()
+      resetVelocity(character)
+   end)
+end
+
+local function detectAnimation()
+   local animator = getAnimator()
+   if not animator then return end
+
+   for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+      for name, data in pairs(animations) do
+         if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. data.id then
+            coroutine.wrap(handleAnimation)(name, data)
+         end
+      end
+   end
+end
+
+RunService.Heartbeat:Connect(detectAnimation)
+
+-- Ensure void bring logic persists after respawn
+localPlayer.CharacterAdded:Connect(function()
+   task.wait(1)
+   RunService.Heartbeat:Connect(detectAnimation)
+end)
