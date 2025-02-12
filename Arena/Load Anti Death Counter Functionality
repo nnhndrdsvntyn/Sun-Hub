@@ -59,6 +59,11 @@ local function handleAntiDeathCounter()
    -- Save original position
    local originalCFrame = rootPart.CFrame
 
+   -- Save camera settings
+   local camera = workspace.CurrentCamera
+   local originalCameraSubject = camera.CameraSubject
+   local originalCameraType = camera.CameraType
+
    -- Create platform and teleport above it
    local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
    rootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, 1, 0))
@@ -72,6 +77,10 @@ local function handleAntiDeathCounter()
 
    -- Teleport back
    rootPart.CFrame = originalCFrame
+
+   -- Restore camera settings
+   camera.CameraSubject = originalCameraSubject
+   camera.CameraType = originalCameraType
 
    -- Small delay before allowing retriggering
    task.wait(1)
