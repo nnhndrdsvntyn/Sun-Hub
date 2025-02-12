@@ -1,0 +1,57 @@
+getgenv().TeleportTools = getgenv().TeleportTools or {}
+
+local locations = {
+    ["TP Center Arena"] = Vector3.new(165, 441, 31),
+    ["TP Mountain 1"] = Vector3.new(-4, 653, -366),
+    ["TP Mountain 2"] = Vector3.new(380, 699, 379),
+    ["TP Void (Safe) Platform"] = Vector3.new(-97109, -495, 97109),
+    ["TP Sky (Safe) Platform"] = Vector3.new(-97109, 1000, 97109),
+    ["TP Death Counter Room (INSIDE)"] = Vector3.new(-64, 43, 20334),
+    ["TP Death Counter Room (OUTSIDE)"] = Vector3.new(-75, 84, 20353),
+    ["TP Atomic Slash Room (INSIDE)"] = Vector3.new(1065, 132, 23005),
+    ["TP Atomic Slash Room (OUTSIDE)"] = Vector3.new(1065, 181, 23005),
+    ["TP White Blank Plate"] = Vector3.new(1065, 406, 23005)
+}
+
+local function TeleportToLocation(location)
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = CFrame.new(location)
+    end
+end
+
+local function ManageTeleportTool(name, state)
+    if state then
+        -- Remove any existing teleport tool before adding a new one
+        for toolName, _ in pairs(getgenv().TeleportTools) do
+            if toolName ~= name then
+                ManageTeleportTool(toolName, false)
+            end
+        end
+
+        -- Create and equip the teleport tool
+        if not game.Players.LocalPlayer.Backpack:FindFirstChild(name) then
+            local tool = Instance.new("Tool")
+            tool.Name = name
+            tool.RequiresHandle = false
+            tool.Parent = game.Players.LocalPlayer.Backpack
+
+            -- Auto teleport when tool is selected
+            tool.Equipped:Connect(function()
+                if locations[name] then
+                    TeleportToLocation(locations[name])
+                end
+            end)
+        end
+    else
+        -- Remove the tool if toggled off
+        local tool = game.Players.LocalPlayer.Backpack:FindFirstChild(name) or
+                     game.Players.LocalPlayer.Character:FindFirstChild(name)
+        if tool then
+            tool:Destroy()
+        end
+    end
+end
+
+getgenv().ManageTeleportTool = ManageTeleportTool
