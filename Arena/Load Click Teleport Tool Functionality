@@ -4,7 +4,7 @@ local function ManageClickTeleportTool(state)
     if state then
         if not game.Players.LocalPlayer.Backpack:FindFirstChild("ClickTeleportTool") then
             local tool = Instance.new("Tool")
-            tool.Name = "ClickTeleportTool"
+            tool.Name = "Tap Teleport"
             tool.RequiresHandle = false
             tool.Parent = game.Players.LocalPlayer.Backpack
 
