@@ -1,0 +1,88 @@
+getgenv().DynamicTeleportTools = getgenv().DynamicTeleportTools or {}
+
+local function TeleportToLocation(location)
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = CFrame.new(location)
+    end
+end
+
+local function SendNotification(title, text)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = 3
+    })
+end
+
+local function FindWeakestDummy()
+    local dummy = workspace:FindFirstChild("Live") and workspace.Live:FindFirstChild("Weakest Dummy")
+    if dummy and dummy:GetAttribute("NPC") and dummy:GetAttribute("RealDummy") and dummy:GetAttribute("SideDashDisable") then
+        return dummy:GetPivot().Position
+    end
+    return nil
+end
+
+local function FindFrozenLock()
+    local lock = workspace:FindFirstChild("Thrown") and workspace.Thrown:FindFirstChild("Frozen Lock")
+    if lock then
+        return lock:GetPivot().Position
+    end
+    return nil
+end
+
+local function ManageDynamicTeleportTool(name, state)
+    local player = game.Players.LocalPlayer
+    local backpack = player:FindFirstChild("Backpack")
+
+    if state then
+        -- Remove existing dynamic teleport tools
+        for toolName, _ in pairs(getgenv().DynamicTeleportTools) do
+            if toolName ~= name then
+                ManageDynamicTeleportTool(toolName, false)
+            end
+        end
+
+        -- Create and equip the teleport tool
+        if backpack and not backpack:FindFirstChild(name) then
+            local tool = Instance.new("Tool")
+            tool.Name = name
+            tool.RequiresHandle = false
+            tool:SetAttribute("Skill", true) -- Auto-unequip
+            tool.Parent = backpack
+
+            -- Auto teleport when tool is selected
+            tool.Equipped:Connect(function()
+                local destination = nil
+
+                if name == "TP to Weakest Dummy" then
+                    destination = FindWeakestDummy()
+                    if not destination then
+                        SendNotification("Error", "Please wait for the Weakest Dummy to spawn...")
+                        return
+                    end
+                elseif name == "TP To Frozen Lock" then
+                    destination = FindFrozenLock()
+                    if not destination then
+                        SendNotification("Error", "Please wait for the Frozen Lock to spawn...")
+                        return
+                    end
+                end
+
+                if destination then
+                    TeleportToLocation(destination)
+                end
+            end)
+        end
+    else
+        -- Remove the tool if toggled off
+        local tool = backpack and backpack:FindFirstChild(name) or
+                     player.Character and player.Character:FindFirstChild(name)
+        if tool then
+            tool:Destroy()
+        end
+    end
+end
+
+getgenv().ManageDynamicTeleportTool = ManageDynamicTeleportTool
