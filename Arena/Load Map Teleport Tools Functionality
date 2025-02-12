@@ -23,6 +23,8 @@ end
 
 local function ManageTeleportTool(name, state)
     local player = game.Players.LocalPlayer
+    local backpack = player:FindFirstChild("Backpack")
+
     if state then
         -- Remove any existing teleport tool before adding a new one
         for toolName, _ in pairs(getgenv().TeleportTools) do
@@ -32,25 +34,24 @@ local function ManageTeleportTool(name, state)
         end
 
         -- Create and equip the teleport tool
-        if not player.Backpack:FindFirstChild(name) then
+        if backpack and not backpack:FindFirstChild(name) then
             local tool = Instance.new("Tool")
             tool.Name = name
             tool.RequiresHandle = false
-            tool.Parent = player.Backpack
+            tool:SetAttribute("Skill", true) -- Enable auto-unequip functionality
+            tool.Parent = backpack
 
-            -- Auto teleport when tool is selected, then unequip itself
+            -- Auto teleport when tool is selected
             tool.Equipped:Connect(function()
                 if locations[name] then
                     TeleportToLocation(locations[name])
                 end
-                task.wait(0.1) -- Slight delay to ensure teleport works
-                player.Character.Humanoid:UnequipTools() -- Unequip tool after teleport
             end)
         end
     else
         -- Remove the tool if toggled off
-        local tool = player.Backpack:FindFirstChild(name) or
-                     player.Character:FindFirstChild(name)
+        local tool = backpack and backpack:FindFirstChild(name) or
+                     player.Character and player.Character:FindFirstChild(name)
         if tool then
             tool:Destroy()
         end
