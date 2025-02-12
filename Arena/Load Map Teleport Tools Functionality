@@ -24,6 +24,7 @@ end
 local function ManageTeleportTool(name, state)
     local player = game.Players.LocalPlayer
     local backpack = player:FindFirstChild("Backpack")
+    local character = player.Character
 
     if state then
         -- Remove any existing teleport tool before adding a new one
@@ -49,9 +50,9 @@ local function ManageTeleportTool(name, state)
             end)
         end
     else
-        -- Remove the tool if toggled off
-        local tool = backpack and backpack:FindFirstChild(name) or
-                     player.Character and player.Character:FindFirstChild(name)
+        -- Remove the tool from Backpack and Character
+        local tool = (backpack and backpack:FindFirstChild(name)) or 
+                     (character and character:FindFirstChild(name))
         if tool then
             tool:Destroy()
         end
