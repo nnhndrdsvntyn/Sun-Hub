@@ -34,9 +34,8 @@ local VoidBring_Section = Exploits_Tab:CreateSection("Void Bring Features")
 getgenv().VoidBringMoves = getgenv().VoidBringMoves or {}
 getgenv().AntiDeathCounterEnabled = false
 
--- Load the functionalities from external scripts
-loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Void%20Bring%20Functionality'))()
-loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Anti%20Death%20Counter%20Functionality'))()
+-- Load Void Bring Functionality (Bring Player)
+loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Bring%20Players/Load%20Void%20Bring%20Functionality'))()
 
 local animations = {
    ["Flowing Water"] = {id = 12273188754, startDelay = 0},
@@ -72,7 +71,7 @@ local ExploitsTabDivider1 = Exploits_Tab:CreateDivider()
 local AntiMovesSection = Exploits_Tab:CreateSection("Anti")
 
 -- Load Hide Player On Low HP Functionality
-loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Hide%20On%20Low%20HP%20Functionality"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Anti/Load%20Hide%20On%20Low%20HP%20Functionality"))()
 
 local HideHPSlider, ReturnHPSlider  -- Declare both sliders first
 
@@ -141,7 +140,7 @@ ReturnHPSlider = Exploits_Tab:CreateSlider({
 })
 
 -- Load Anti Stun/Freeze/Ragdoll Functionality
-loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Load%20Anti%20Stun_Freeze_Ragdoll%20Functionality"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Anti/Load%20Anti%20Stun_Freeze_Ragdoll%20Functionality"))()
 
 local AntiStunFreezeToggle = Exploits_Tab:CreateToggle({
     Name = "Anti Stun/Freeze/Ragdoll",
@@ -154,6 +153,9 @@ local AntiStunFreezeToggle = Exploits_Tab:CreateToggle({
     end,
 })
 
+-- Load Anti Death Counter Functionality
+loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Anti/Load%20Anti%20Death%20Counter%20Functionality'))()
+
 local AntiDeathCounterToggle = Exploits_Tab:CreateToggle({
    Name = "Anti Death Counter",
    CurrentValue = false,
@@ -165,3 +167,108 @@ local AntiDeathCounterToggle = Exploits_Tab:CreateToggle({
 })
 
 local ExploitsTabDivider2 = Exploits_Tab:CreateDivider()
+
+local Teleport_Tab = Window:CreateTab("Teleport", "navigation")
+local TeleportMapLocations_Section = Teleport_Tab:CreateSection("Map Locations")
+
+-- Load Teleport Locations Functionality
+
+getgenv().TeleportLocations = {
+    { Name = "Arena Center", Position = Vector3.new(142, 441, 11) },
+    { Name = "Mountain 1", Position = Vector3.new(-15, 653, -379) },
+    { Name = "Mountain 2", Position = Vector3.new(345, 699, 381) },
+    { Name = "Death Counter Room (Inside)", Position = Vector3.new(-64, 43, 20334) },
+    { Name = "Death Counter Room (Outside)", Position = Vector3.new(-77, 84, 20353) },
+    { Name = "Atomic Slash Room (Inside)", Position = Vector3.new(1063, 170, 23004) },
+    { Name = "Atomic Slash Room (Outside)", Position = Vector3.new(1063, 133, 23004) },
+    { Name = "Blank Plate", Position = Vector3.new(1063, 406, 23004) }
+}
+
+local player = game.Players.LocalPlayer
+
+for _, location in ipairs(getgenv().TeleportLocations) do
+    Teleport_Tab:CreateButton({
+        Name = location.Name,
+        Callback = function()
+            local character = player and player.Character
+            local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+            if hrp then
+                hrp.CFrame = CFrame.new(location.Position)
+            end
+        end,
+    })
+end
+
+local TeleportItems_NPCSLocations_Section = Teleport_Tab:CreateSection("Teleport To NPC/Item")
+
+local player = game.Players.LocalPlayer
+local teleportTargets = {
+    ["TP Weakest Dummy"] = function()
+        local dummy = workspace:FindFirstChild("Live") and workspace.Live:FindFirstChild("Weakest Dummy")
+        if dummy then
+            return dummy:GetPivot().Position
+        end
+        return nil, "Weakest Dummy"
+    end,
+
+    ["TP Inside Frozen Lock (To Become Frozen Soul)"] = function()
+        local frozenLock = workspace:FindFirstChild("Thrown") and workspace.Thrown:FindFirstChild("Frozen Lock")
+        if frozenLock then
+            return frozenLock:GetPivot().Position
+        end
+        return nil, "Frozen Lock"
+    end
+}
+
+for buttonName, getPosition in pairs(teleportTargets) do
+    Teleport_Tab:CreateButton({
+        Name = buttonName,
+        Callback = function()
+            local position, missingName = getPosition()
+            local character = player and player.Character
+            local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+            if position and hrp then
+                hrp.CFrame = CFrame.new(position)
+            else
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "Error",
+                    Text = "Please wait for " .. missingName .. " to spawn...",
+                    Duration = 3
+                })
+            end
+        end,
+    })
+end
+
+-- Create UI elements
+local Visual_Notify_Tab = Window:CreateTab("Visual/Notify", "eye")
+local NotifyUltimateActivations_Moves_Section = Visual_Notify_Tab:CreateSection("Notify Ultimate Activations/Moves")
+local NotifyUltimateActivation_Section = Visual_Notify_Tab:CreateSection("Notify Ultimate Activation")
+
+-- Load ESP Ultimate/Notify Activation Functionality
+loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Visual/Ultimate%20Moves_Activations%20ESP/Load%20Notify%20and%20(ESP)%20Ultimate%20Functionality"))()
+
+local ultimateAnimations = {
+    {Name = "Notify Strongest Hero Ultimate Activation"},
+    {Name = "Notify Hero Hunter Ultimate Activation"},
+    {Name = "Notify Destructive Cyborg Ultimate Activation"},
+    {Name = "Notify Deadly Ninja Ultimate Activation"},
+    {Name = "Notify Brutal Demon Ultimate Activation"},
+    {Name = "Notify Blade Master Ultimate Activation"},
+    {Name = "Notify Wild Psychic Ultimate Activation"},
+    {Name = "Notify Martial Artist Ultimate Activation"}
+}
+
+-- Create toggles for each ultimate
+for _, data in ipairs(ultimateAnimations) do
+    Visual_Notify_Tab:CreateToggle({
+        Name = data.Name,
+        CurrentValue = getgenv().toggles[data.Name] or false,
+        Flag = data.Name,
+        Callback = function(Value)
+            getgenv().toggles[data.Name] = Value
+        end,
+    })
+end
