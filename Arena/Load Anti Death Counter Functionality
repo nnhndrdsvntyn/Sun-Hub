@@ -1,6 +1,6 @@
 local function createPlatform(x, z)
    local platform = Instance.new("Part")
-   platform.Size = Vector3.new(1, 1, 1)
+   platform.Size = Vector3.new(2500, 1, 2500)
    platform.Position = Vector3.new(x, -499, z)
    platform.Anchored = true
    platform.Transparency = 1
