@@ -1,0 +1,110 @@
+local player = game.Players.LocalPlayer
+
+getgenv().toggles = getgenv().toggles or {}
+getgenv().cooldowns = getgenv().cooldowns or {}
+
+local ultimateAnimations = {
+    {Name = "Notify Strongest Hero Ultimate Activation", IDs = {12447707844}, DisplayName = "Strongest Hero Ultimate"},
+    {Name = "Notify Hero Hunter Ultimate Activation", IDs = {12342141464}, DisplayName = "Hero Hunter Ultimate"},
+    {Name = "Notify Destructive Cyborg Ultimate Activation", IDs = {12772543293}, DisplayName = "Destructive Cyborg Ultimate"},
+    {Name = "Notify Deadly Ninja Ultimate Activation", IDs = {13499771836, 13497875049}, DisplayName = "Deadly Ninja Ultimate"},
+    {Name = "Notify Brutal Demon Ultimate Activation", IDs = {14733282425}, DisplayName = "Brutal Demon Ultimate"},
+    {Name = "Notify Blade Master Ultimate Activation", IDs = {15391323441}, DisplayName = "Blade Master Ultimate"},
+    {Name = "Notify Wild Psychic Ultimate Activation", IDs = {16734584478}, DisplayName = "Wild Psychic Ultimate"},
+    {Name = "Notify Martial Artist Ultimate Activation", IDs = {18435535291, 18435383478}, DisplayName = "Martial Artist Ultimate"}
+}
+
+local function monitorAnimations()
+    while task.wait(0.1) do
+        for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
+            if otherPlayer ~= player and otherPlayer.Character then
+                local animator = otherPlayer.Character:FindFirstChildWhichIsA("Humanoid") and otherPlayer.Character:FindFirstChildWhichIsA("Humanoid"):FindFirstChildWhichIsA("Animator")
+
+                if animator then
+                    for _, data in ipairs(ultimateAnimations) do
+                        if getgenv().toggles[data.Name] and (not getgenv().cooldowns[otherPlayer.UserId] or time() - getgenv().cooldowns[otherPlayer.UserId] >= 1) then
+                            for _, animID in ipairs(data.IDs) do
+                                for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+                                    if track.Animation.AnimationId == "rbxassetid://" .. animID then
+                                        local characterModel = workspace.Live:FindFirstChild(otherPlayer.Name)
+
+                                        if characterModel and characterModel:GetAttribute("JustUlted") then
+                                            local justUltedValue = characterModel:GetAttribute("JustUlted")
+                                            if getgenv().cooldowns[otherPlayer.UserId] == justUltedValue then
+                                                break
+                                            end
+                                            getgenv().cooldowns[otherPlayer.UserId] = justUltedValue
+
+                                            local highlight = characterModel:FindFirstChild("Highlight")
+                                            if highlight then
+                                                local originalDepthMode = highlight.DepthMode
+                                                local originalFillColor = highlight.FillColor
+                                                local originalFillTransparency = highlight.FillTransparency
+
+                                                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                                                highlight.FillColor = Color3.fromRGB(255, 255, 0)
+                                                highlight.FillTransparency = 0
+
+                                                game.StarterGui:SetCore("SendNotification", {
+                                                    Title = "Watch Out...",
+                                                    Text = otherPlayer.DisplayName .. "(@" .. otherPlayer.Name .. ") Activated [" .. data.DisplayName .. " - 'Activation'] 🚨",
+                                                    Duration = 7.5
+                                                })
+
+                                                local billboard = Instance.new("BillboardGui")
+                                                billboard.Size = UDim2.new(0, 100, 0, 50)
+                                                billboard.StudsOffset = Vector3.new(0, 3, 0)
+                                                billboard.Adornee = characterModel:FindFirstChild("HumanoidRootPart")
+                                                billboard.Parent = characterModel
+                                                
+                                                local alertLabel = Instance.new("TextLabel")
+                                                alertLabel.Size = UDim2.new(1, 0, 1, 0)
+                                                alertLabel.BackgroundTransparency = 1
+                                                alertLabel.Text = "🚨"
+                                                alertLabel.TextScaled = true
+                                                alertLabel.TextColor3 = Color3.new(1, 0, 0)
+                                                alertLabel.Parent = billboard
+
+                                                local staticBillboard = Instance.new("BillboardGui")
+                                                staticBillboard.Size = UDim2.new(0, 200, 0, 30)
+                                                staticBillboard.StudsOffset = Vector3.new(0, 4, 0)
+                                                staticBillboard.Adornee = characterModel:FindFirstChild("HumanoidRootPart")
+                                                staticBillboard.Parent = characterModel
+                                                staticBillboard.AlwaysOnTop = true
+
+                                                local staticLabel = Instance.new("TextLabel")
+                                                staticLabel.Size = UDim2.new(1, 0, 1, 0)
+                                                staticLabel.BackgroundTransparency = 1
+                                                staticLabel.Text = "🚨 " .. data.DisplayName .. " 🚨"
+                                                staticLabel.Font = Enum.Font.SourceSansBold
+                                                staticLabel.TextSize = 18 
+                                                staticLabel.TextColor3 = Color3.new(255, 255, 255) 
+                                                staticLabel.Parent = staticBillboard
+
+                                                while characterModel:GetAttribute("Ulted") do
+                                                    task.wait(0.1)
+                                                end
+
+                                                highlight.DepthMode = originalDepthMode
+                                                highlight.FillColor = originalFillColor
+                                                highlight.FillTransparency = originalFillTransparency
+
+                                                billboard:Destroy()
+                                                staticBillboard:Destroy()
+
+                                                task.wait(1)
+                                                getgenv().cooldowns[otherPlayer.UserId] = nil
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+task.spawn(monitorAnimations)
