@@ -272,3 +272,56 @@ for _, data in ipairs(ultimateAnimations) do
         end,
     })
 end
+
+local Tools_Tab = Window:CreateTab("Toos", "hammer")
+
+local TPMapLocationTools_Section = Tools_Tab:CreateSection("Teleport To Map Location Tools")
+
+getgenv().teleportToggles = getgenv().teleportToggles or {}
+
+local teleportLocations = {
+    { Name = "Arena Center", Position = Vector3.new(142, 441, 11) },
+    { Name = "Mountain 1", Position = Vector3.new(-15, 653, -379) },
+    { Name = "Mountain 2", Position = Vector3.new(345, 699, 381) },
+    { Name = "Death Counter Room (Inside)", Position = Vector3.new(-64, 43, 20334) },
+    { Name = "Death Counter Room (Outside)", Position = Vector3.new(-77, 84, 20353) },
+    { Name = "Atomic Slash Room (Inside)", Position = Vector3.new(1063, 170, 23004) },
+    { Name = "Atomic Slash Room (Outside)", Position = Vector3.new(1063, 133, 23004) },
+    { Name = "Blank Plate", Position = Vector3.new(1063, 406, 23004) }
+}
+
+local player = game.Players.LocalPlayer
+local backpack = player:FindFirstChild("Backpack") or Instance.new("Backpack", player)
+
+for _, location in ipairs(teleportLocations) do
+    local toolName = "TP " .. location.Name
+
+    getgenv().teleportToggles[toolName] = Tools_Tab:CreateToggle({
+        Name = toolName,
+        CurrentValue = false,
+        Flag = toolName:gsub(" ", "") .. "Flag", -- Ensure unique flag names
+        Callback = function(value)
+            if value then
+                -- Create the tool if toggle is on
+                local tool = Instance.new("Tool")
+                tool.Name = toolName
+                tool.RequiresHandle = false
+                tool:SetAttribute("Skill", true) -- Set the boolean property
+
+                tool.Equipped:Connect(function()
+                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        player.Character.HumanoidRootPart.CFrame = CFrame.new(location.Position)
+                    end
+                end)
+
+                tool.Parent = backpack
+            else
+                -- Remove the tool if toggle is off
+                local existingTool = backpack:FindFirstChild(toolName)
+                if existingTool then
+                    existingTool:Destroy()
+                end
+            end
+        end
+    })
+end
