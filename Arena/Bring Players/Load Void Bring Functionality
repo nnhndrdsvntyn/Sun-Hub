@@ -80,6 +80,12 @@ local function handleAnimation(animName, animData)
       originalCFrame = rootPart.CFrame
    end
 
+   -- Create and set camera to the small invisible part BEFORE teleportation
+   cameraPart = createCameraPart()
+   cameraPart.Position = rootPart.Position
+   Camera.CameraSubject = cameraPart
+   Camera.CameraType = Enum.CameraType.Custom
+
    task.wait(animData.startDelay)
 
    local animator = getAnimator()
@@ -98,12 +104,6 @@ local function handleAnimation(animName, animData)
 
    local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
    platformCFrame = CFrame.new(platform.Position + Vector3.new(0, animData.highTp and 50 or 1, 0))
-
-   -- Create and set camera to the small invisible part
-   cameraPart = createCameraPart()
-   cameraPart.Position = rootPart.Position
-   Camera.CameraSubject = cameraPart
-   Camera.CameraType = Enum.CameraType.Custom
 
    local teleportConnection
    teleportConnection = RunService.Heartbeat:Connect(function()
