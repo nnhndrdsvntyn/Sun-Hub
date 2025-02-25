@@ -1,5 +1,3 @@
-local SunHubTSB_Arena = loadstring(game:HttpGet("https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Arena/Loading%20Message%20(And%20Version%20Message)"))()
-
 -- Load UI Library
 local SunHubTSB_Arena = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
