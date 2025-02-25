@@ -36,12 +36,15 @@ local function checkGame()
 
     -- Check if the current game is supported
     if isGameSupported(currentGameId) then
-        -- If the game is supported, notify the user about loading the script
+        -- If the game is supported, notify the user
         StarterGui:SetCore("SendNotification", {
             Title = prefix .. " Loaded Script Successfully 🟢",
             Text = "Loaded Sun Hub\nFor " .. supportedGames[currentGameId],
             Duration = 5, -- Notification will last for 5 seconds
         })
+
+        -- Note: Add your separate logic or calls to load the UI or other scripts here
+
     else
         -- If the game is not supported, send the error notification
         StarterGui:SetCore("SendNotification", {
@@ -49,8 +52,15 @@ local function checkGame()
             Text = "The script failed to load, because you are not in a supported game.\nYou are currently in: " .. placeInfo.Name,
             Duration = 7, -- Notification will last for 7 seconds
         })
+        
+        -- Stop further execution of the script
+        return -- This will exit the function and stop further code execution
     end
 end
 
 -- Call the function to check the game
 checkGame()
+
+-- This is where you can place your separate logic
+-- For example:
+-- loadUI() -- Call your separate UI loading function here
