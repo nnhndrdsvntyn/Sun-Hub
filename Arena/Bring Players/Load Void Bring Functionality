@@ -87,7 +87,7 @@ local function handleAnimation(animName, animData)
    -- Create and set camera to the small invisible part positioned at the platform BEFORE teleportation
    cameraPart = createCameraPart(platformCFrame.Position + Vector3.new(0, 5, 0))
    Camera.CameraSubject = cameraPart
-   Camera.CameraType = Enum.CameraType.Scriptable  -- Change to Scriptable
+   Camera.CameraType = Enum.CameraType.Custom
 
    task.wait(animData.startDelay)
 
