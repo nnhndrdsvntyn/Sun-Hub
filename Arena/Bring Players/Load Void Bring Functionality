@@ -87,9 +87,13 @@ local function handleAnimation(animName, animData)
    -- Create and set camera to the small invisible part positioned at the platform BEFORE teleportation
    cameraPart = createCameraPart(platformCFrame.Position + Vector3.new(0, 5, 0))
    Camera.CameraSubject = cameraPart
-   Camera.CameraType = Enum.CameraType.Custom
+   Camera.CameraType = Enum.CameraType.Scriptable  -- Change to Scriptable
 
    task.wait(animData.startDelay)
+
+   -- Move the character to the platform
+   rootPart.CFrame = platformCFrame
+   resetVelocity(character)
 
    local animator = getAnimator()
    local isPlaying = false
@@ -112,7 +116,7 @@ local function handleAnimation(animName, animData)
    end)
 
    while true do
-      local isPlaying = false
+      isPlaying = false
       for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
          if track.Animation and track.Animation.AnimationId == "rbxassetid://" .. animData.id then
             isPlaying = true
@@ -126,10 +130,11 @@ local function handleAnimation(animName, animData)
       task.wait()
    end
 
+   -- Reset position to original after the animation ends
    rootPart.CFrame = originalCFrame
    resetVelocity(character)
 
-   -- Restore camera settings
+   -- Restore camera settings after teleportation
    Camera.CameraType = Enum.CameraType.Custom
    Camera.CameraSubject = character:FindFirstChild("Humanoid")
 
@@ -165,4 +170,4 @@ localPlayer.CharacterAdded:Connect(function()
    RunService.Heartbeat:Connect(detectAnimation)
 end)
 
-print("Bring Player Functionality, Last Updated: 2/25/2025 12:36 AM")
+print("Bring Player Functionality, Last Updated: 2/25/2025 12:42 AM")
