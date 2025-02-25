@@ -1,0 +1,56 @@
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local MarketplaceService = game:GetService("MarketplaceService")
+
+-- Define the expected game IDs and names as a table
+local supportedGames = {
+    [10449761463] = "The Strongest Battlegrounds",
+    -- Add additional game IDs and their corresponding names here
+}
+
+-- Define the prefix
+local prefix = "[Sun Hub] "
+
+-- Get the current game's Place ID
+local currentGameId = game.PlaceId
+
+-- Get the current game's info using MarketplaceService
+local placeInfo = MarketplaceService:GetProductInfo(currentGameId)
+
+-- Check if the current game is supported
+local function isGameSupported(gameId)
+    return supportedGames[gameId] ~= nil
+end
+
+-- Function to check the game
+local function checkGame()
+    -- Send the initial notification
+    StarterGui:SetCore("SendNotification", {
+        Title = "Wait... ⏳",
+        Text = "Checking if game is valid...",
+        Duration = 3, -- Notification will last for 3 seconds
+    })
+
+    -- Wait for a short time before the check
+    wait(0)
+
+    -- Check if the current game is supported
+    if isGameSupported(currentGameId) then
+        -- If the game is supported, notify the user about loading the script
+        StarterGui:SetCore("SendNotification", {
+            Title = prefix .. " Loaded Script Successfully 🟢",
+            Text = "Loaded Sun Hub\nFor " .. supportedGames[currentGameId],
+            Duration = 5, -- Notification will last for 5 seconds
+        })
+    else
+        -- If the game is not supported, send the error notification
+        StarterGui:SetCore("SendNotification", {
+            Title = "Error 🔴",
+            Text = "The script failed to load, because you are not in a supported game.\nYou are currently in: " .. placeInfo.Name,
+            Duration = 7, -- Notification will last for 7 seconds
+        })
+    end
+end
+
+-- Call the function to check the game
+checkGame()
