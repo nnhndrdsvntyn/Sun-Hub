@@ -1,3 +1,6 @@
+-- Game Check
+local SunHubTSB_Arena = loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Supported%20Game%20Check'))()
+
 -- Load UI Library
 local SunHubTSB_Arena = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
