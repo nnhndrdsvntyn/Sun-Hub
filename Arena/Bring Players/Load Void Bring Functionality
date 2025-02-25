@@ -30,6 +30,7 @@ local animations = {
 local originalCFrame = nil
 local activeAnimations = {}
 local platformCFrame = nil
+local cameraPart = nil
 
 local function createPlatform(x, z)
    local platform = Instance.new("Part")
@@ -40,6 +41,17 @@ local function createPlatform(x, z)
    platform.CanCollide = true
    platform.Parent = workspace
    return platform
+end
+
+local function createCameraPart()
+   local part = Instance.new("Part")
+   part.Size = Vector3.new(1, 1, 1)
+   part.Shape = Enum.PartType.Ball
+   part.Transparency = 1
+   part.Anchored = true
+   part.CanCollide = false
+   part.Parent = workspace
+   return part
 end
 
 local function resetVelocity(character)
@@ -54,7 +66,6 @@ end
 local function handleAnimation(animName, animData)
    if not getgenv().VoidBringMoves[animName] then return end
 
-   -- Debounce check
    if activeAnimations[animName] then return end
    activeAnimations[animName] = true
 
@@ -65,7 +76,6 @@ local function handleAnimation(animName, animData)
       return
    end
 
-   -- Save original position if not already saved
    if not originalCFrame then
       originalCFrame = rootPart.CFrame
    end
@@ -89,17 +99,19 @@ local function handleAnimation(animName, animData)
    local platform = createPlatform(originalCFrame.X, originalCFrame.Z)
    platformCFrame = CFrame.new(platform.Position + Vector3.new(0, animData.highTp and 50 or 1, 0))
 
-   -- Set camera to Scriptable
-   Camera.CameraType = Enum.CameraType.Scriptable
+   -- Create and set camera to the small invisible part
+   cameraPart = createCameraPart()
+   cameraPart.Position = rootPart.Position
+   Camera.CameraSubject = cameraPart
+   Camera.CameraType = Enum.CameraType.Custom
 
-   -- Teleport player to the platform every heartbeat until the animation stops
    local teleportConnection
    teleportConnection = RunService.Heartbeat:Connect(function()
       rootPart.CFrame = platformCFrame
+      cameraPart.Position = rootPart.Position
       resetVelocity(character)
    end)
 
-   -- Wait until the animation stops playing
    while true do
       local isPlaying = false
       for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
@@ -115,19 +127,20 @@ local function handleAnimation(animName, animData)
       task.wait()
    end
 
-   -- Always teleport back to the original position
    rootPart.CFrame = originalCFrame
    resetVelocity(character)
 
-   -- Set camera to Custom
+   -- Restore camera settings
    Camera.CameraType = Enum.CameraType.Custom
+   Camera.CameraSubject = character:FindFirstChild("Humanoid")
 
-   -- Clear the saved position and debounce
+   -- Cleanup
    originalCFrame = nil
    activeAnimations[animName] = nil
    teleportConnection:Disconnect()
+   if cameraPart then cameraPart:Destroy() end
+   if platform then platform:Destroy() end
 
-   -- Reset velocity for 0.01 seconds after teleporting back
    task.delay(0.01, function()
       resetVelocity(character)
    end)
@@ -148,7 +161,6 @@ end
 
 RunService.Heartbeat:Connect(detectAnimation)
 
--- Ensure void bring logic persists after respawn
 localPlayer.CharacterAdded:Connect(function()
    task.wait(1)
    RunService.Heartbeat:Connect(detectAnimation)
