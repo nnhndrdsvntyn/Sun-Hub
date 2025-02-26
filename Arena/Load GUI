@@ -1,7 +1,14 @@
 -- Game Check
-local SunHubTSB_Arena = loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Supported%20Game%20Check'))()
+local success, isValidGame = pcall(function()
+    return loadstring(game:HttpGet('https://raw.githubusercontent.com/nnhndrdsvntyn/Sun-Hub/refs/heads/Sun-Hub/Supported%20Game%20Check'))()
+end)
 
--- Load UI Library
+-- If the game is not supported, stop execution
+if not success or not isValidGame then
+    return -- Stops the script
+end
+
+-- Load UI Library (Only runs if the game is valid)
 local SunHubTSB_Arena = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = SunHubTSB_Arena:CreateWindow({
