@@ -43,7 +43,7 @@ local function checkGame()
             Duration = 5, -- Notification will last for 5 seconds
         })
 
-        -- Note: Add your separate logic or calls to load the UI or other scripts here
+        return true -- ✅ Return true if the game is valid
 
     else
         -- If the game is not supported, send the error notification
@@ -52,15 +52,9 @@ local function checkGame()
             Text = "The script failed to load, because you are not in a supported game.\nYou are currently in: " .. placeInfo.Name,
             Duration = 7, -- Notification will last for 7 seconds
         })
-        
-        -- Stop further execution of the script
-        return -- This will exit the function and stop further code execution
+
+        return false -- ❌ Return false if the game is unsupported
     end
 end
 
--- Call the function to check the game
-checkGame()
-
--- This is where you can place your separate logic
--- For example:
--- loadUI() -- Call your separate UI loading function here
+return checkGame() -- ✅ The script now returns a value!
